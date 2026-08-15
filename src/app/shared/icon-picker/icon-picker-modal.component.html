@@ -1,0 +1,72 @@
+<div class="icon-modal-overlay" *ngIf="aberto" (click)="fecharModal()">
+	<div class="icon-modal" (click)="$event.stopPropagation()">
+		<!-- HEADER -->
+
+		<div class="icon-modal-header">
+			<div>
+				<h3>Selecionar ícone</h3>
+				<p>Escolha um ícone.</p>
+			</div>
+
+			<button type="button" class="icon-modal-close" (click)="fecharModal()" title="Fechar">
+				<span class="material-icons">close</span>
+			</button>
+		</div>
+
+		<!-- BUSCA -->
+
+		<div class="icon-search">
+			<span class="material-icons">search</span>
+
+			<input [(ngModel)]="busca" name="buscaIcone" (ngModelChange)="filtrar()" placeholder="Pesquisar ícone..."
+				autocomplete="off" />
+
+			<button *ngIf="busca" type="button" class="icon-search-clear" (click)="limparBusca()" title="Limpar busca">
+				<span class="material-icons">close</span>
+			</button>
+		</div>
+
+		<!-- CARREGANDO -->
+
+		<div class="icon-empty" *ngIf="carregando">
+			<span class="material-icons">hourglass_empty</span>
+			<strong>Carregando ícones...</strong>
+		</div>
+
+		<ng-container *ngIf="!carregando">
+			<!-- INFORMAÇÃO -->
+
+			<div class="icon-results-info" *ngIf="iconesFiltrados.length">
+				<span>{{ iconesFiltrados.length }} ícone(s) encontrado(s)</span>
+				<span *ngIf="iconesFiltrados.length > 300">Mostrando os primeiros 300</span>
+			</div>
+
+			<!-- GRID -->
+
+			<div class="icon-grid" *ngIf="iconesVisiveis().length">
+				<button type="button" class="icon-option" *ngFor="let iconeItem of iconesVisiveis()"
+					(click)="escolher(iconeItem)" [title]="iconeItem">
+					<span class="material-icons">{{ iconeItem }}</span>
+				</button>
+			</div>
+
+			<!-- NENHUM RESULTADO -->
+
+			<div class="icon-empty" *ngIf="iconesFiltrados.length === 0 && icones.length > 0">
+				<span class="material-icons">search_off</span>
+				<strong>Nenhum ícone encontrado</strong>
+				<span>Tente pesquisar por outro nome.</span>
+			</div>
+
+			<!-- ERRO AO CARREGAR -->
+
+			<div class="icon-empty" *ngIf="icones.length === 0">
+				<span class="material-icons">error_outline</span>
+				<strong>Não foi possível carregar os ícones</strong>
+				<span>
+					Verifique se o arquivo <strong>material-icons.json</strong> está em <strong>assets/</strong>.
+				</span>
+			</div>
+		</ng-container>
+	</div>
+</div>

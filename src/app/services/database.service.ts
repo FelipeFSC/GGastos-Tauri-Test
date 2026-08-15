@@ -22,6 +22,56 @@ export interface FaturaRef {
   ano_referencia: number;
 }
 
+export interface PagamentoFatura {
+  id: string;
+  valor: number;
+  data: string;
+  conta_id: string | null;
+  conta_nome: string | null;
+}
+
+export interface FaturaResumoPeriodo {
+  id: string;
+  cartao_id: string;
+  cartao_nome: string;
+  cartao_icone: string | null;
+  cartao_cor: string | null;
+  mes_referencia: number;
+  ano_referencia: number;
+  data_vencimento: string;
+  valorTotal: number;
+}
+
+export interface FaturaDetalhada {
+  id: string;
+  cartao_id: string;
+  cartao_nome: string;
+  cartao_icone: string | null;
+  cartao_cor: string | null;
+  conta_pagamento_id: string | null;
+  mes_referencia: number;
+  ano_referencia: number;
+  data_fechamento: string;
+  data_vencimento: string;
+  status: string;
+  faturaAtual: number;
+  saldoAnterior: number;
+  valorTotal: number;
+  valorPago: number;
+  valorRestante: number;
+  ehAtual: boolean;
+  ehPaga: boolean;
+  pagamentos: PagamentoFatura[];
+}
+
+interface SaldoFatura {
+  faturaAtual: number;
+  saldoAnterior: number;
+  valorTotal: number;
+  valorPago: number;
+  valorRestante: number;
+}
+
 export interface LancamentoBase {
   id?: string;
   usuario_id?: string;
@@ -118,6 +168,9 @@ export class DatabaseService {
   private db: any;
   private initPromise: Promise<void> | null = null;
 
+  /** Fila usada por serializarConexao() para garantir 1 operação por vez. */
+  private filaOperacoes: Promise<any> = Promise.resolve();
+
   // =====================================================================
   // INICIALIZAÇÃO
   // =====================================================================
@@ -137,7 +190,9 @@ export class DatabaseService {
   }
 
   private async reallyInit(): Promise<void> {
-    this.db = await Database.load("sqlite:ggastos.db");
+    const conexao = await Database.load("sqlite:ggastos.db");
+
+    this.db = this.serializarConexao(conexao);
 
     // SQLite vem com foreign_keys desabilitado por padrão.
     await this.db.execute("PRAGMA foreign_keys = ON;");
@@ -148,6 +203,41 @@ export class DatabaseService {
     await this.seedUsuarioLocal();
 
     console.log("Banco SQLite inicializado!");
+  }
+
+  /**
+   * Serializa todas as chamadas execute/select numa fila única.
+   *
+   * Necessário porque as transações do app são mandadas como statements
+   * SQL soltos (BEGIN/COMMIT/ROLLBACK via este mesmo execute, não existe
+   * uma API de transação no plugin). Se duas operações do banco rodarem
+   * concorrentemente — por ex. o app-lancamento-modal carregando contas/
+   * cartões/categorias enquanto uma fatura está registrando um pagamento
+   * em transação — uma delas pode tentar abrir uma transação por cima da
+   * outra que ainda está aberta ("cannot start a transaction within a
+   * transaction"). Enfileirando tudo aqui garantimos só 1 operação em
+   * voo por vez na conexão.
+   */
+  private serializarConexao(conexao: any): any {
+    const enfileirar = <T>(operacao: () => Promise<T>): Promise<T> => {
+      const resultado = this.filaOperacoes.then(operacao, operacao);
+
+      // A fila continua mesmo se essa operação falhar — senão uma
+      // rejeição travaria todas as chamadas seguintes pra sempre.
+      this.filaOperacoes = resultado.then(
+        () => undefined,
+        () => undefined,
+      );
+
+      return resultado;
+    };
+
+    return {
+      execute: (sql: string, params?: any[]) =>
+        enfileirar(() => conexao.execute(sql, params)),
+      select: (sql: string, params?: any[]) =>
+        enfileirar(() => conexao.select(sql, params)),
+    };
   }
 
   // =====================================================================
@@ -347,6 +437,36 @@ export class DatabaseService {
     `);
 
     // -------------------------------------------------------------------
+    // FATURAS <-> PAGAMENTOS
+    // -------------------------------------------------------------------
+    // Cada pagamento (podendo ser parcial) gera 1 lançamento de despesa na
+    // conta escolhida (lancamento_id), pra manter saldo de conta e
+    // relatórios corretos sem precisar de nenhuma lógica extra lá.
+
+    await this.db.execute(`
+      CREATE TABLE IF NOT EXISTS faturas_pagamentos (
+        id TEXT PRIMARY KEY,
+        fatura_id TEXT NOT NULL,
+        lancamento_id TEXT NOT NULL,
+        conta_id TEXT,
+        valor REAL NOT NULL,
+        data TEXT NOT NULL,
+
+        FOREIGN KEY (fatura_id)
+          REFERENCES faturas (id)
+          ON DELETE CASCADE,
+
+        FOREIGN KEY (lancamento_id)
+          REFERENCES lancamentos (id)
+          ON DELETE CASCADE,
+
+        FOREIGN KEY (conta_id)
+          REFERENCES contas (id)
+          ON DELETE SET NULL
+      )
+    `);
+
+    // -------------------------------------------------------------------
     // LANÇAMENTOS
     // -------------------------------------------------------------------
 
@@ -532,6 +652,11 @@ export class DatabaseService {
     await this.db.execute(`
       CREATE INDEX IF NOT EXISTS idx_faturas_cartao_periodo
       ON faturas(cartao_id, ano_referencia, mes_referencia)
+    `);
+
+    await this.db.execute(`
+      CREATE INDEX IF NOT EXISTS idx_faturas_pagamentos_fatura
+      ON faturas_pagamentos(fatura_id)
     `);
 
     await this.db.execute(`
@@ -1569,100 +1694,489 @@ export class DatabaseService {
   }
 
   // =====================================================================
-  // FATURAS
+  // FATURAS — SALDO ACUMULADO (saldo mês anterior / total / restante)
   // =====================================================================
 
   /**
-   * Marca uma fatura como paga e cria o lançamento de pagamento
-   * na conta correspondente.
+   * Calcula, pra cada fatura de um cartão (em ordem cronológica), quanto
+   * foi comprado no mês, quanto sobrou de saldo da fatura anterior, o
+   * total devido, quanto já foi pago e quanto ainda falta.
    *
-   * Proteção importante:
-   * se a fatura já estiver paga, não cria outro pagamento.
+   * O "saldo mês anterior" nunca é guardado no banco — é sempre recalculado
+   * a partir do histórico de pagamentos, então editar/excluir um pagamento
+   * antigo já reflete automaticamente nas faturas seguintes.
    */
-  async pagarFatura(
+  private async calcularSaldosDoCartao(
+    cartaoId: string
+  ): Promise<Map<string, SaldoFatura>> {
+    const faturas = await this.db.select(
+      `
+      SELECT id
+      FROM faturas
+      WHERE cartao_id = ?
+      ORDER BY ano_referencia ASC, mes_referencia ASC
+      `,
+      [cartaoId]
+    );
+
+    const resultado = new Map<string, SaldoFatura>();
+
+    let saldoAnterior = 0;
+
+    for (const fatura of faturas) {
+      const [faturaAtualRows, valorPagoRows] = await Promise.all([
+        this.db.select(
+          `SELECT COALESCE(SUM(valor), 0) AS total FROM lancamentos WHERE fatura_id = ?`,
+          [fatura.id]
+        ),
+        this.db.select(
+          `SELECT COALESCE(SUM(valor), 0) AS total FROM faturas_pagamentos WHERE fatura_id = ?`,
+          [fatura.id]
+        ),
+      ]);
+
+      const faturaAtual = Number(faturaAtualRows[0]?.total ?? 0);
+      const valorPago = Number(valorPagoRows[0]?.total ?? 0);
+      const valorTotal = faturaAtual + saldoAnterior;
+      const valorRestante = Math.round((valorTotal - valorPago) * 100) / 100;
+
+      resultado.set(fatura.id, {
+        faturaAtual,
+        saldoAnterior,
+        valorTotal,
+        valorPago,
+        valorRestante,
+      });
+
+      saldoAnterior = valorRestante;
+    }
+
+    return resultado;
+  }
+
+  /**
+   * Mês/ano de referência que uma compra feita hoje cairia, pro cartão
+   * informado (mesma regra de dia_fechamento de obterOuCriarFatura).
+   * Usado só pra saber se uma fatura é "a atual".
+   */
+  private calcularReferenciaAtual(
+    diaFechamento: number
+  ): { mes: number; ano: number } {
+    const hoje = new Date();
+
+    const dia = hoje.getDate();
+
+    let mes = hoje.getMonth() + 1;
+    let ano = hoje.getFullYear();
+
+    if (dia > diaFechamento) {
+      mes++;
+
+      if (mes > 12) {
+        mes = 1;
+        ano++;
+      }
+    }
+
+    return { mes, ano };
+  }
+
+  /**
+   * Recalcula e grava faturas.status a partir do saldo acumulado
+   * (não é a fonte da verdade — só um cache pra listagens simples).
+   */
+  private async recalcularStatusFatura(
+    cartaoId: string,
     faturaId: string
   ): Promise<void> {
+    const saldos = await this.calcularSaldosDoCartao(cartaoId);
+
+    const saldo = saldos.get(faturaId);
+
+    const status =
+      saldo && saldo.valorTotal > 0 && saldo.valorRestante <= 0.01
+        ? "paga"
+        : "aberta";
+
+    await this.db.execute(
+      `UPDATE faturas SET status = ? WHERE id = ?`,
+      [status, faturaId]
+    );
+  }
+
+  // =====================================================================
+  // FATURAS — CONSULTA
+  // =====================================================================
+
+  /**
+   * Dados completos de uma fatura pra tela de Fatura: cartão, valores
+   * (fatura do mês, saldo anterior, total, pago, restante), status atual/
+   * paga e o histórico de pagamentos.
+   */
+  async obterFaturaDetalhada(
+    faturaId: string
+  ): Promise<FaturaDetalhada | null> {
     await this.init();
+
+    const faturas = await this.db.select(
+      `
+      SELECT
+        f.id, f.cartao_id, f.mes_referencia, f.ano_referencia,
+        f.data_fechamento, f.data_vencimento, f.status,
+        c.nome as cartao_nome, c.icone as cartao_icone, c.cor as cartao_cor,
+        c.dia_fechamento, c.conta_pagamento_id
+      FROM faturas f
+      JOIN cartoes_credito c ON c.id = f.cartao_id
+      WHERE f.id = ?
+      LIMIT 1
+      `,
+      [faturaId]
+    );
+
+    if (!faturas.length) {
+      return null;
+    }
+
+    const fatura = faturas[0];
+
+    const saldos = await this.calcularSaldosDoCartao(fatura.cartao_id);
+    const saldo = saldos.get(faturaId);
+
+    if (!saldo) {
+      return null;
+    }
+
+    const pagamentos = await this.listarPagamentosFatura(faturaId);
+
+    const referenciaAtual = this.calcularReferenciaAtual(fatura.dia_fechamento);
+
+    return {
+      id: fatura.id,
+      cartao_id: fatura.cartao_id,
+      cartao_nome: fatura.cartao_nome,
+      cartao_icone: fatura.cartao_icone,
+      cartao_cor: fatura.cartao_cor,
+      conta_pagamento_id: fatura.conta_pagamento_id,
+      mes_referencia: fatura.mes_referencia,
+      ano_referencia: fatura.ano_referencia,
+      data_fechamento: fatura.data_fechamento,
+      data_vencimento: fatura.data_vencimento,
+      status: fatura.status,
+      faturaAtual: saldo.faturaAtual,
+      saldoAnterior: saldo.saldoAnterior,
+      valorTotal: saldo.valorTotal,
+      valorPago: saldo.valorPago,
+      valorRestante: saldo.valorRestante,
+      ehAtual:
+        referenciaAtual.mes === fatura.mes_referencia &&
+        referenciaAtual.ano === fatura.ano_referencia,
+      ehPaga: saldo.valorTotal > 0 && saldo.valorRestante <= 0.01,
+      pagamentos,
+    };
+  }
+
+  /**
+   * Faturas cujo vencimento cai num período (usado pela listagem de
+   * Lançamentos pra montar a linha-resumo "Fatura {mês} {ano}" do mês).
+   * Só devolve faturas com valor total diferente de zero.
+   */
+  async listarFaturasPorVencimento(
+    dataInicio: string,
+    dataFimExclusivo: string
+  ): Promise<FaturaResumoPeriodo[]> {
+    await this.init();
+
+    const faturas = await this.db.select(
+      `
+      SELECT
+        f.id, f.cartao_id, f.mes_referencia, f.ano_referencia, f.data_vencimento,
+        c.nome as cartao_nome, c.icone as cartao_icone, c.cor as cartao_cor
+      FROM faturas f
+      JOIN cartoes_credito c ON c.id = f.cartao_id
+      WHERE c.usuario_id = ?
+        AND f.data_vencimento >= ?
+        AND f.data_vencimento < ?
+      ORDER BY f.data_vencimento ASC
+      `,
+      [USUARIO_LOCAL_ID, dataInicio, dataFimExclusivo]
+    );
+
+    const saldosPorCartao = new Map<string, Map<string, SaldoFatura>>();
+    const resultado: FaturaResumoPeriodo[] = [];
+
+    for (const fatura of faturas) {
+      if (!saldosPorCartao.has(fatura.cartao_id)) {
+        saldosPorCartao.set(
+          fatura.cartao_id,
+          await this.calcularSaldosDoCartao(fatura.cartao_id)
+        );
+      }
+
+      const saldo = saldosPorCartao.get(fatura.cartao_id)!.get(fatura.id);
+      const valorTotal = saldo ? saldo.valorTotal : 0;
+
+      if (valorTotal !== 0) {
+        resultado.push({
+          id: fatura.id,
+          cartao_id: fatura.cartao_id,
+          cartao_nome: fatura.cartao_nome,
+          cartao_icone: fatura.cartao_icone,
+          cartao_cor: fatura.cartao_cor,
+          mes_referencia: fatura.mes_referencia,
+          ano_referencia: fatura.ano_referencia,
+          data_vencimento: fatura.data_vencimento,
+          valorTotal,
+        });
+      }
+    }
+
+    return resultado;
+  }
+
+  /**
+   * Fatura anterior/próxima do mesmo cartão (pras setas de navegação da
+   * tela de Fatura). Não cria fatura nenhuma — se não existir ainda
+   * (porque não houve compra naquele mês), devolve null.
+   */
+  async obterFaturaAdjacente(
+    cartaoId: string,
+    mesReferencia: number,
+    anoReferencia: number,
+    direcao: "anterior" | "proxima"
+  ): Promise<{ id: string } | null> {
+    await this.init();
+
+    const comparador = direcao === "anterior" ? "<" : ">";
+    const ordem = direcao === "anterior" ? "DESC" : "ASC";
+
+    const rows = await this.db.select(
+      `
+      SELECT id
+      FROM faturas
+      WHERE cartao_id = ?
+        AND (
+          ano_referencia ${comparador} ?
+          OR (ano_referencia = ? AND mes_referencia ${comparador} ?)
+        )
+      ORDER BY ano_referencia ${ordem}, mes_referencia ${ordem}
+      LIMIT 1
+      `,
+      [cartaoId, anoReferencia, anoReferencia, mesReferencia]
+    );
+
+    return rows.length ? { id: rows[0].id } : null;
+  }
+
+  // =====================================================================
+  // FATURAS — PAGAMENTOS (parciais)
+  // =====================================================================
+
+  /**
+   * Pagamentos já registrados de uma fatura, do mais antigo pro mais
+   * novo, com o nome da conta usada em cada um.
+   */
+  async listarPagamentosFatura(
+    faturaId: string
+  ): Promise<PagamentoFatura[]> {
+    await this.init();
+
+    return this.db.select(
+      `
+      SELECT p.id, p.valor, p.data, p.conta_id, c.nome as conta_nome
+      FROM faturas_pagamentos p
+      LEFT JOIN contas c ON c.id = p.conta_id
+      WHERE p.fatura_id = ?
+      ORDER BY p.data ASC
+      `,
+      [faturaId]
+    );
+  }
+
+  /**
+   * Registra um pagamento (pode ser parcial) de uma fatura: cria o
+   * lançamento de despesa na conta escolhida e a linha de pagamento,
+   * e recalcula o status da fatura.
+   */
+  async registrarPagamentoFatura(
+    faturaId: string,
+    contaId: string | null,
+    valor: number,
+    data: string
+  ): Promise<void> {
+    await this.init();
+
+    if (!(valor > 0)) {
+      throw new Error("O valor do pagamento deve ser maior que zero.");
+    }
 
     await this.db.execute("BEGIN TRANSACTION");
 
     try {
       const faturas = await this.db.select(
-        `
-        SELECT *
-        FROM faturas
-        WHERE id = ?
-        LIMIT 1
-        `,
+        `SELECT mes_referencia, ano_referencia, cartao_id FROM faturas WHERE id = ? LIMIT 1`,
         [faturaId]
       );
 
       if (!faturas.length) {
-        throw new Error(
-          "Fatura não encontrada."
-        );
+        throw new Error("Fatura não encontrada.");
       }
 
       const fatura = faturas[0];
 
-      if (fatura.status === "paga") {
+      const lancamentoId = this.gerarId();
+
+      await this.db.execute(
+        `
+        INSERT INTO lancamentos (
+          id, usuario_id, conta_id, tipo, descricao, valor, data, confirmado
+        )
+        VALUES (?, ?, ?, 'despesa', ?, ?, ?, 1)
+        `,
+        [
+          lancamentoId,
+          USUARIO_LOCAL_ID,
+          contaId,
+          `Pagamento fatura ${String(fatura.mes_referencia).padStart(2, "0")}/${fatura.ano_referencia}`,
+          valor,
+          data,
+        ]
+      );
+
+      await this.db.execute(
+        `
+        INSERT INTO faturas_pagamentos (id, fatura_id, lancamento_id, conta_id, valor, data)
+        VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        [this.gerarId(), faturaId, lancamentoId, contaId, valor, data]
+      );
+
+      await this.recalcularStatusFatura(fatura.cartao_id, faturaId);
+
+      await this.db.execute("COMMIT");
+    } catch (erro) {
+      await this.db.execute("ROLLBACK");
+      throw erro;
+    }
+  }
+
+  /**
+   * Atualiza um pagamento já feito (valor/data/conta), refletindo tanto
+   * na linha de pagamento quanto no lançamento de despesa vinculado.
+   */
+  async atualizarPagamentoFatura(
+    pagamentoId: string,
+    dados: { contaId?: string | null; valor?: number; data?: string }
+  ): Promise<void> {
+    await this.init();
+
+    if (dados.valor !== undefined && !(dados.valor > 0)) {
+      throw new Error("O valor do pagamento deve ser maior que zero.");
+    }
+
+    await this.db.execute("BEGIN TRANSACTION");
+
+    try {
+      const pagamentos = await this.db.select(
+        `
+        SELECT p.id, p.fatura_id, p.lancamento_id, f.cartao_id
+        FROM faturas_pagamentos p
+        JOIN faturas f ON f.id = p.fatura_id
+        WHERE p.id = ?
+        LIMIT 1
+        `,
+        [pagamentoId]
+      );
+
+      if (!pagamentos.length) {
+        throw new Error("Pagamento não encontrado.");
+      }
+
+      const pagamento = pagamentos[0];
+
+      const camposPagamento: string[] = [];
+      const valoresPagamento: any[] = [];
+      const camposLancamento: string[] = [];
+      const valoresLancamento: any[] = [];
+
+      if (dados.contaId !== undefined) {
+        camposPagamento.push("conta_id = ?");
+        valoresPagamento.push(dados.contaId);
+        camposLancamento.push("conta_id = ?");
+        valoresLancamento.push(dados.contaId);
+      }
+
+      if (dados.valor !== undefined) {
+        camposPagamento.push("valor = ?");
+        valoresPagamento.push(dados.valor);
+        camposLancamento.push("valor = ?");
+        valoresLancamento.push(dados.valor);
+      }
+
+      if (dados.data !== undefined) {
+        camposPagamento.push("data = ?");
+        valoresPagamento.push(dados.data);
+        camposLancamento.push("data = ?");
+        valoresLancamento.push(dados.data);
+      }
+
+      if (camposPagamento.length) {
+        valoresPagamento.push(pagamentoId);
+
+        await this.db.execute(
+          `UPDATE faturas_pagamentos SET ${camposPagamento.join(", ")} WHERE id = ?`,
+          valoresPagamento
+        );
+      }
+
+      if (camposLancamento.length) {
+        valoresLancamento.push(pagamento.lancamento_id);
+
+        await this.db.execute(
+          `UPDATE lancamentos SET ${camposLancamento.join(", ")} WHERE id = ?`,
+          valoresLancamento
+        );
+      }
+
+      await this.recalcularStatusFatura(pagamento.cartao_id, pagamento.fatura_id);
+
+      await this.db.execute("COMMIT");
+    } catch (erro) {
+      await this.db.execute("ROLLBACK");
+      throw erro;
+    }
+  }
+
+  /**
+   * Exclui um pagamento (e o lançamento de despesa vinculado a ele).
+   */
+  async excluirPagamentoFatura(pagamentoId: string): Promise<void> {
+    await this.init();
+
+    await this.db.execute("BEGIN TRANSACTION");
+
+    try {
+      const pagamentos = await this.db.select(
+        `
+        SELECT p.fatura_id, p.lancamento_id, f.cartao_id
+        FROM faturas_pagamentos p
+        JOIN faturas f ON f.id = p.fatura_id
+        WHERE p.id = ?
+        LIMIT 1
+        `,
+        [pagamentoId]
+      );
+
+      if (!pagamentos.length) {
         await this.db.execute("COMMIT");
         return;
       }
 
-      const totalRows = await this.db.select(
-        `
-        SELECT
-          COALESCE(SUM(valor), 0) AS total
-        FROM lancamentos
-        WHERE fatura_id = ?
-      `,
-        [faturaId]
-      );
+      const pagamento = pagamentos[0];
 
-      const total = Number(
-        totalRows[0]?.total ?? 0
-      );
+      await this.db.execute(`DELETE FROM faturas_pagamentos WHERE id = ?`, [pagamentoId]);
+      await this.db.execute(`DELETE FROM lancamentos WHERE id = ?`, [pagamento.lancamento_id]);
 
-      if (
-        fatura.conta_pagamento_id &&
-        total > 0
-      ) {
-        await this.db.execute(
-          `
-          INSERT INTO lancamentos (
-            id,
-            usuario_id,
-            conta_id,
-            tipo,
-            descricao,
-            valor,
-            data,
-            confirmado
-          )
-          VALUES (?, ?, ?, 'despesa', ?, ?, ?, 1)
-          `,
-          [
-            this.gerarId(),
-            USUARIO_LOCAL_ID,
-            fatura.conta_pagamento_id,
-            `Pagamento fatura ${String(
-              fatura.mes_referencia
-            ).padStart(2, "0")}/${fatura.ano_referencia}`,
-            total,
-            this.formatarData(new Date()),
-          ]
-        );
-      }
-
-      await this.db.execute(
-        `
-        UPDATE faturas
-        SET status = 'paga'
-        WHERE id = ?
-        `,
-        [faturaId]
-      );
+      await this.recalcularStatusFatura(pagamento.cartao_id, pagamento.fatura_id);
 
       await this.db.execute("COMMIT");
     } catch (erro) {

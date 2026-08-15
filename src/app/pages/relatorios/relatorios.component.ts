@@ -151,8 +151,12 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	@HostListener("window:resize")
 	onResize(): void {
-		this.charts.despesas?.resize();
-		this.charts.receitas?.resize();
+		if (this.charts.despesas && !this.charts.despesas.isDisposed()) {
+			this.charts.despesas.resize();
+		}
+		if (this.charts.receitas && !this.charts.receitas.isDisposed()) {
+			this.charts.receitas.resize();
+		}
 	}
 
 	// =====================================================================
@@ -581,11 +585,24 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 			return;
 		}
 
-		if (!this.charts[chave]) {
-			this.charts[chave] = echarts.init(elemento);
+		let chart = this.charts[chave];
+
+		/*
+		 * O container é recriado do zero toda vez que "*ngIf=!carregando"
+		 * alterna (troca de mês, de aba etc.) — o Angular destrói a <div>
+		 * antiga e cria uma nova. Se a instância guardada ainda existir mas
+		 * estiver presa a um elemento que já saiu do DOM (ou foi disposed),
+		 * ela precisa ser descartada e recriada em cima do elemento atual.
+		 */
+		if (chart && (chart.isDisposed() || chart.getDom() !== elemento)) {
+			chart.dispose();
+			chart = null;
 		}
 
-		const chart = this.charts[chave]!;
+		if (!chart) {
+			chart = echarts.init(elemento);
+			this.charts[chave] = chart;
+		}
 
 		chart.setOption({
 			tooltip: {

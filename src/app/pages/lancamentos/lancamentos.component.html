@@ -13,7 +13,8 @@
                 </button>
 
                 <div class="add-menu" *ngIf="menuAdicionarAberto">
-                    <button type="button" class="add-option receita" (click)="abrirModal('receita')">
+                    <button type="button" class="add-option receita"
+                        (click)="modal.abrirNovo('receita'); menuAdicionarAberto = false">
                         <span class="material-icons"> trending_up </span>
 
                         <div>
@@ -22,7 +23,8 @@
                         </div>
                     </button>
 
-                    <button type="button" class="add-option despesa" (click)="abrirModal('despesa')">
+                    <button type="button" class="add-option despesa"
+                        (click)="modal.abrirNovo('despesa'); menuAdicionarAberto = false">
                         <span class="material-icons"> trending_down </span>
 
                         <div>
@@ -82,12 +84,61 @@
                 </div>
 
                 <div class="day-list">
-                    <div class="lancamento-row" *ngFor="let l of grupo.lancamentos">
+                    <ng-container *ngFor="let item of grupo.itens">
+                        <!-- ===================================== -->
+                        <!-- LINHA-RESUMO DE FATURA -->
+                        <!-- ===================================== -->
+
+                        <a *ngIf="item.ehFatura" class="lancamento-row fatura-row" [routerLink]="['/fatura', item.fatura!.id]">
+                            <div class="category-icon" style="background: #9aa0a6" title="Fatura do cartão">
+                                <span class="material-icons"> receipt_long </span>
+                            </div>
+
+                            <div class="lancamento-description">
+                                <strong>
+                                    Fatura {{ nomeMesFatura(item.fatura!.mes_referencia) }} {{ item.fatura!.ano_referencia }}
+                                </strong>
+
+                                <span class="category-name">Cartão de crédito</span>
+                            </div>
+
+                            <div class="lancamento-indicators">
+                                <span class="origin" [title]="item.fatura!.cartao_nome">
+                                    <span class="origin-icon" [style.color]="item.fatura!.cartao_cor || '#4285f4'">
+                                        <span class="material-icons">
+                                            {{ item.fatura!.cartao_icone || "credit_card" }}
+                                        </span>
+                                    </span>
+
+                                    <span class="origin-name">
+                                        {{ item.fatura!.cartao_nome }}
+                                    </span>
+                                </span>
+                            </div>
+
+                            <div class="lancamento-value valor-despesa">
+                                <span>
+                                    - R$ {{ valorFormatado(item.fatura!.valorTotal) }}
+                                </span>
+                            </div>
+
+                            <span class="fatura-badge">
+                                <span class="material-icons"> chevron_right </span>
+                            </span>
+
+                            <div class="lancamento-actions"></div>
+                        </a>
+
+                        <!-- ===================================== -->
+                        <!-- LANÇAMENTO NORMAL -->
+                        <!-- ===================================== -->
+
+                        <div class="lancamento-row" *ngIf="!item.ehFatura">
                         <!-- CATEGORIA -->
 
-                        <div class="category-icon" [style.background]="corCategoria(l)" [title]="nomeCategoria(l)">
+                        <div class="category-icon" [style.background]="corCategoria(item.lancamento!)" [title]="nomeCategoria(item.lancamento!)">
                             <span class="material-icons">
-                                {{ iconeCategoria(l) }}
+                                {{ iconeCategoria(item.lancamento!) }}
                             </span>
                         </div>
 
@@ -95,87 +146,87 @@
 
                         <div class="lancamento-description">
                             <strong>
-                                {{ l.descricao }}
+                                {{ item.lancamento!.descricao }}
                             </strong>
 
                             <span class="category-name">
-                                {{ nomeCategoria(l) }}
+                                {{ nomeCategoria(item.lancamento!) }}
                             </span>
                         </div>
 
                         <!-- INDICADORES -->
 
                         <div class="lancamento-indicators">
-                            <span *ngIf="ehFixo(l)" class="indicator" title="Lançamento fixo (recorrente)">
+                            <span *ngIf="ehFixo(item.lancamento!)" class="indicator" title="Lançamento fixo (recorrente)">
                                 <span class="material-icons"> repeat </span>
                             </span>
 
-                            <span *ngIf="ehParcelado(l)" class="indicator" [title]="'Parcela ' + textoParcela(l)">
+                            <span *ngIf="ehParcelado(item.lancamento!)" class="indicator" [title]="'Parcela ' + textoParcela(item.lancamento!)">
                                 <span class="material-icons"> receipt_long </span>
 
                                 <small>
-                                    {{ textoParcela(l) }}
+                                    {{ textoParcela(item.lancamento!) }}
                                 </small>
                             </span>
 
-                            <span class="indicator obs-indicator" *ngIf="l.observacao">
+                            <span class="indicator obs-indicator" *ngIf="item.lancamento!.observacao">
                                 <span class="material-icons"> notes </span>
 
                                 <span class="obs-tooltip">
-                                    {{ l.observacao }}
+                                    {{ item.lancamento!.observacao }}
                                 </span>
                             </span>
 
-                            <span class="indicator" *ngIf="tagsDoLancamento(l).length" [title]="tituloTags(l)">
+                            <span class="indicator" *ngIf="tagsDoLancamento(item.lancamento!).length" [title]="tituloTags(item.lancamento!)">
                                 <span class="material-icons"> sell </span>
 
-                                <small *ngIf="tagsDoLancamento(l).length > 1">
-                                    {{ tagsDoLancamento(l).length }}
+                                <small *ngIf="tagsDoLancamento(item.lancamento!).length > 1">
+                                    {{ tagsDoLancamento(item.lancamento!).length }}
                                 </small>
                             </span>
 
-                            <span class="indicator" *ngIf="quantidadeAnexos(l) > 0"
-                                [title]="quantidadeAnexos(l) + ' anexo(s)'">
+                            <span class="indicator" *ngIf="quantidadeAnexos(item.lancamento!) > 0"
+                                [title]="quantidadeAnexos(item.lancamento!) + ' anexo(s)'">
                                 <span class="material-icons"> attach_file </span>
 
-                                <small *ngIf="quantidadeAnexos(l) > 1">
-                                    {{ quantidadeAnexos(l) }}
+                                <small *ngIf="quantidadeAnexos(item.lancamento!) > 1">
+                                    {{ quantidadeAnexos(item.lancamento!) }}
                                 </small>
                             </span>
 
-                            <span class="origin" [title]="nomeOrigem(l)">
-                                <span class="origin-icon" [style.color]="corOrigem(l)">
+                            <span class="origin" [title]="nomeOrigem(item.lancamento!)">
+                                <span class="origin-icon" [style.color]="corOrigem(item.lancamento!)">
                                     <span class="material-icons">
-                                        {{ iconeOrigem(l) }}
+                                        {{ iconeOrigem(item.lancamento!) }}
                                     </span>
                                 </span>
 
                                 <span class="origin-name">
-                                    {{ nomeOrigem(l) }}
+                                    {{ nomeOrigem(item.lancamento!) }}
                                 </span>
                             </span>
                         </div>
 
                         <!-- VALOR -->
 
-                        <div class="lancamento-value" [class.valor-receita]="l.tipo === 'receita'"
-                            [class.valor-despesa]="l.tipo === 'despesa'">
+                        <div class="lancamento-value" [class.valor-receita]="item.lancamento!.tipo === 'receita'"
+                            [class.valor-despesa]="item.lancamento!.tipo === 'despesa'">
                             <span>
-                                {{ l.tipo === "receita" ? "+" : "-" }}
-                                R$ {{ valorFormatado(l.valor) }}
+                                {{ item.lancamento!.tipo === "receita" ? "+" : "-" }}
+                                R$ {{ valorFormatado(item.lancamento!.valor) }}
                             </span>
                         </div>
 
                         <!-- JOIA -->
 
-                        <button type="button" class="lancamento-jewel" [class.confirmado]="+l.confirmado === 1" [title]="
-                +l.confirmado === 1
+                        <button type="button" class="lancamento-jewel" [class.confirmado]="+item.lancamento!.confirmado === 1" [title]="
+                +item.lancamento!.confirmado === 1
                   ? 'Confirmado — clique para desmarcar'
                   : 'Marcar como pago/recebido'
-              " (click)="alternarConfirmado(l)">
+              " (click)="alternarConfirmado(item.lancamento!)">
                             <span class="material-icons">
                                 {{
-                                +l.confirmado === 1
+                                +item.lancamento!.confirmado === 1
                                 ? "check_circle"
                                 : "radio_button_unchecked"
                                 }}
@@ -185,15 +236,16 @@
                         <!-- AÇÕES -->
 
                         <div class="lancamento-actions">
-                            <button type="button" class="btn-row-action" title="Editar" (click)="editarLancamento(l)">
+                            <button type="button" class="btn-row-action" title="Editar" (click)="modal.abrirEdicao(item.lancamento!)">
                                 <span class="material-icons"> edit </span>
                             </button>
 
-                            <button type="button" class="btn-row-action delete" title="Excluir" (click)="remover(l)">
+                            <button type="button" class="btn-row-action delete" title="Excluir" (click)="remover(item.lancamento!)">
                                 <span class="material-icons"> delete </span>
                             </button>
                         </div>
-                    </div>
+                        </div>
+                    </ng-container>
                 </div>
             </div>
 
@@ -213,420 +265,10 @@
 </div>
 
 <!-- ===================================================== -->
-<!-- MODAL -->
+<!-- MODAL (criar/editar lançamento) -->
 <!-- ===================================================== -->
 
-<div class="modal-overlay" *ngIf="modalAberto" (click)="fecharModal()">
-    <div class="modal" (click)="$event.stopPropagation()">
-        <!-- HEADER -->
-
-        <div class="modal-header">
-            <div>
-                <div class="modal-title-row">
-                    <div class="modal-icon" [class.receita]="tipoModal === 'receita'"
-                        [class.despesa]="tipoModal === 'despesa'">
-                        <span class="material-icons">
-                            {{ tipoModal === "receita" ? "trending_up" : "trending_down" }}
-                        </span>
-                    </div>
-
-                    <div>
-                        <h2>
-                            {{ tipoModal === "receita" ? "Nova receita" : "Nova despesa" }}
-                        </h2>
-
-                        <p>
-                            {{
-                            tipoModal === "receita"
-                            ? "Adicione uma nova entrada."
-                            : "Adicione uma nova saída."
-                            }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <button type="button" class="modal-close" (click)="fecharModal()" title="Fechar">
-                <span class="material-icons"> close </span>
-            </button>
-        </div>
-
-        <!-- BODY -->
-
-        <div class="modal-body">
-            <!-- DESCRIÇÃO -->
-
-            <div class="form-group">
-                <label> Descrição </label>
-
-                <input type="text" [(ngModel)]="form.descricao" placeholder="Ex.: Salário, mercado, aluguel..." />
-            </div>
-
-            <!-- VALOR / DATA / JOIA -->
-
-            <div class="form-row main-values">
-                <div class="form-group">
-                    <label> Valor </label>
-
-                    <div class="money-input">
-                        <span> R$ </span>
-
-                        <input type="text" [(ngModel)]="form.valor" placeholder="0,00" inputmode="decimal" />
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label> Data </label>
-
-                    <input type="date" [(ngModel)]="form.data" />
-                </div>
-
-                <button type="button" class="option-button" [class.active]="form.confirmado" [title]="
-            form.confirmado
-              ? 'Lançamento confirmado'
-              : 'Marcar como pago/confirmado'
-          " (click)="form.confirmado = !form.confirmado">
-                    <span class="material-icons"> diamond </span>
-                </button>
-            </div>
-
-            <!-- CONTA / CARTÃO + CATEGORIA -->
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label> Conta / Cartão </label>
-
-                    <select [(ngModel)]="form.origem">
-                        <option value="">Selecione uma conta ou cartão</option>
-
-                        <optgroup label="Contas">
-                            <option *ngFor="let conta of contas" [value]="'conta:' + conta.id">
-                                {{ conta.nome }}
-                            </option>
-                        </optgroup>
-
-                        <optgroup label="Cartões">
-                            <option *ngFor="let cartao of cartoes" [value]="'cartao:' + cartao.id">
-                                {{ cartao.nome }}
-                            </option>
-                        </optgroup>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label> Categoria </label>
-
-                    <select [(ngModel)]="form.categoria_id">
-                        <option value="">Selecione uma categoria</option>
-
-                        <ng-container *ngFor="let categoria of categoriasPrincipais">
-                            <option [value]="categoria.id">
-                                {{ categoria.nome }}
-                            </option>
-
-                            <option *ngFor="let subcategoria of subcategoriasDa(categoria.id)"
-                                [value]="subcategoria.id">
-                                &nbsp;&nbsp;&nbsp;↳ {{ subcategoria.nome }}
-                            </option>
-                        </ng-container>
-                    </select>
-                </div>
-            </div>
-
-            <!-- OBSERVAÇÃO -->
-
-            <div class="observation-container" *ngIf="opcoes.observacao">
-                <label> Observação </label>
-
-                <textarea [(ngModel)]="form.observacao" placeholder="Adicione uma observação..."></textarea>
-            </div>
-
-            <!-- OPÇÕES -->
-
-            <div class="options-bar">
-                <!-- REPETIR (lançamento novo: alternável) -->
-
-                <button type="button" class="feature-button" [class.active]="opcoes.repetir"
-                    (click)="alternarOpcao('repetir')" *ngIf="!editarId">
-                    <span class="feature-icon">
-                        <span class="material-icons"> repeat </span>
-                    </span>
-
-                    <span> Repetir </span>
-                </button>
-
-                <!-- REPETIR (edição de lançamento de grupo: travado, só indicativo) -->
-
-                <div class="feature-button active"
-                    title="O tipo de repetição não pode ser alterado, só a frequência/parcelas"
-                    *ngIf="editarId && editandoGrupo">
-                    <span class="feature-icon">
-                        <span class="material-icons"> repeat </span>
-                    </span>
-
-                    <span>
-                        {{ tipoRepeticaoOriginal === "fixa" ? "Fixa" : "Parcelada" }}
-                    </span>
-                </div>
-
-                <!-- OBSERVAÇÃO -->
-
-                <button type="button" class="feature-button" [class.active]="opcoes.observacao"
-                    (click)="alternarOpcao('observacao')">
-                    <span class="feature-icon">
-                        <span class="material-icons"> notes </span>
-                    </span>
-
-                    <span> Observação </span>
-                </button>
-
-                <!-- ANEXO -->
-
-                <button type="button" class="feature-button" [class.active]="opcoes.anexo"
-                    (click)="alternarOpcao('anexo')">
-                    <span class="feature-icon">
-                        <span class="material-icons"> attach_file </span>
-                    </span>
-
-                    <span> Anexo </span>
-                </button>
-
-                <!-- TAGS -->
-
-                <button type="button" class="feature-button" [class.active]="opcoes.tags"
-                    (click)="alternarOpcao('tags')">
-                    <span class="feature-icon">
-                        <span class="material-icons"> sell </span>
-                    </span>
-
-                    <span> Tags </span>
-                </button>
-            </div>
-
-            <!-- ================================================= -->
-            <!-- ESCOPO DA EDIÇÃO/EXCLUSÃO (só para lançamento de grupo) -->
-            <!-- ================================================= -->
-
-            <div class="scope-panel" *ngIf="editandoGrupo">
-                <label> Aplicar alteração em </label>
-
-                <div class="repeat-options scope-options">
-                    <button type="button" [class.selected]="escopoEdicao === 'todos'" (click)="escopoEdicao = 'todos'">
-                        <strong>Alterar todos</strong>
-                        <span>Passadas e futuras</span>
-                    </button>
-
-                    <button type="button" [class.selected]="escopoEdicao === 'atual_e_proximos'"
-                        (click)="escopoEdicao = 'atual_e_proximos'">
-                        <strong>Alterar o atual e os próximos</strong>
-                        <span>A partir desta ocorrência</span>
-                    </button>
-
-                    <button type="button" [class.selected]="escopoEdicao === 'atual'" (click)="escopoEdicao = 'atual'">
-                        <strong>Alterar apenas o atual</strong>
-                        <span>Só esta ocorrência</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- ================================================= -->
-            <!-- REPETIR -->
-            <!-- ================================================= -->
-
-            <div class="repeat-panel" *ngIf="opcoes.repetir">
-                <div class="repeat-options" *ngIf="!editandoGrupo">
-                    <button type="button" [class.selected]="form.tipoRepeticao === 'fixa'"
-                        (click)="form.tipoRepeticao = 'fixa'">
-                        <strong>
-                            {{ tipoModal === "receita" ? "Receita fixa" : "Despesa fixa" }}
-                        </strong>
-
-                        <span> Repete automaticamente </span>
-                    </button>
-
-                    <button type="button" [class.selected]="form.tipoRepeticao === 'parcelada'"
-                        (click)="form.tipoRepeticao = 'parcelada'">
-                        <strong> Lançamento parcelado </strong>
-
-                        <span> Divide em parcelas </span>
-                    </button>
-                </div>
-
-                <p class="repeat-locked-info" *ngIf="editandoGrupo">
-                    Este lançamento é
-                    {{
-                    tipoRepeticaoOriginal === "fixa"
-                    ? tipoModal === "receita"
-                    ? "uma receita fixa"
-                    : "uma despesa
-                    fixa"
-                    : "parcelado"
-                    }}. Não é possível mudar o tipo de repetição, só
-                    {{
-                    tipoRepeticaoOriginal === "fixa"
-                    ? "a frequência"
-                    : "a quantidade de parcelas"
-                    }}.
-                </p>
-
-                <!-- FIXA -->
-
-                <div class="repeat-content" *ngIf="form.tipoRepeticao === 'fixa'">
-                    <label> Frequência </label>
-
-                    <select [(ngModel)]="form.frequencia">
-                        <option *ngFor="let frequencia of frequencias" [value]="frequencia.valor">
-                            {{ frequencia.nome }}
-                        </option>
-                    </select>
-                </div>
-
-                <!-- PARCELADA -->
-
-                <div class="repeat-content" *ngIf="form.tipoRepeticao === 'parcelada'">
-                    <div class="installment-row">
-                        <label> Parcelar em </label>
-
-                        <input type="number" min="2" step="1" [(ngModel)]="form.quantidadeParcelas" />
-
-                        <span> parcelas </span>
-
-                        <select [(ngModel)]="form.frequencia">
-                            <option *ngFor="let frequencia of frequencias" [value]="frequencia.valor">
-                                {{ frequencia.nome }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="installment-info" *ngIf="
-              form.quantidadeParcelas &&
-              form.quantidadeParcelas >= 2 &&
-              valorNumerico() > 0
-            ">
-                        <strong>
-                            Serão lançadas
-                            {{ form.quantidadeParcelas }}
-                            parcelas de R$ {{ valorParcelaFormatado() }}
-                        </strong>
-
-                        <span>
-                            Em caso de divisão não exata, a sobra será somada à primeira
-                            parcela.
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ================================================= -->
-            <!-- TAGS -->
-            <!-- ================================================= -->
-
-            <div class="tags-panel" *ngIf="opcoes.tags">
-                <div class="tags-input" *ngIf="tagsDisponiveis.length; else semTagsCadastradas">
-                    <select [(ngModel)]="novaTagId">
-                        <option value="" disabled>Selecione uma tag</option>
-                        <option *ngFor="let tag of tagsParaSelecionar" [value]="tag.id">
-                            {{ tag.nome }}
-                        </option>
-                    </select>
-
-                    <button type="button" (click)="adicionarTagSelecionada()" title="Adicionar tag"
-                        [disabled]="!novaTagId">
-                        <span class="material-icons"> add </span>
-                    </button>
-                </div>
-
-                <ng-template #semTagsCadastradas>
-                    <p class="tags-empty-hint">
-                        Nenhuma tag cadastrada ainda. Crie tags na tela "Tags" pra poder
-                        usá-las aqui.
-                    </p>
-                </ng-template>
-
-                <div class="tag-list" *ngIf="form.tagIds.length">
-                    <span class="tag" *ngFor="let tagId of form.tagIds; let i = index">
-                        {{ nomeTag(tagId) }}
-
-                        <button type="button" (click)="removerTag(i)" title="Remover tag">
-                            <span class="material-icons"> close </span>
-                        </button>
-                    </span>
-                </div>
-            </div>
-
-            <!-- ================================================= -->
-            <!-- ANEXOS -->
-            <!-- ================================================= -->
-
-            <div class="attachment-panel" *ngIf="opcoes.anexo">
-                <label class="attachment-upload">
-                    <span class="material-icons"> attach_file </span>
-
-                    <span> Adicionar arquivo </span>
-
-                    <input type="file" multiple (change)="adicionarAnexos($event)" />
-                </label>
-
-                <!-- Anexos já salvos no banco (edição de lançamento existente) -->
-                <div class="attachment-list" *ngIf="anexosExistentes.length">
-                    <div class="attachment" *ngFor="let anexo of anexosExistentes">
-                        <span class="material-icons"> description </span>
-
-                        <div>
-                            <strong>
-                                {{ anexo.nome }}
-                            </strong>
-
-                            <span>
-                                {{ tamanhoArquivo(anexo.tamanho) }}
-                            </span>
-                        </div>
-
-                        <button type="button" title="Remover arquivo" (click)="removerAnexoExistente(anexo.id)">
-                            <span class="material-icons"> delete </span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Arquivos recém-selecionados, ainda não salvos -->
-                <div class="attachment-list" *ngIf="form.anexos.length">
-                    <div class="attachment" *ngFor="let anexo of form.anexos; let i = index">
-                        <span class="material-icons"> description </span>
-
-                        <div>
-                            <strong>
-                                {{ anexo.nome }}
-                            </strong>
-
-                            <span>
-                                {{ tamanhoArquivo(anexo.tamanho) }}
-                            </span>
-                        </div>
-
-                        <button type="button" title="Remover arquivo" (click)="removerAnexo(i)">
-                            <span class="material-icons"> delete </span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- FOOTER -->
-
-        <div class="modal-footer">
-            <button type="button" class="btn-cancel" (click)="fecharModal()">
-                Cancelar
-            </button>
-
-            <button type="button" class="btn-save" [class.expense]="tipoModal === 'despesa'"
-                (click)="salvarLancamento()" [disabled]="salvando">
-                <span class="material-icons"> save </span>
-
-                {{ salvando ? "Salvando..." : "Salvar" }}
-            </button>
-        </div>
-    </div>
-</div>
+<app-lancamento-modal #modal (salvo)="carregarLancamentos()"></app-lancamento-modal>
 
 <!-- ===================================================== -->
 <!-- MODAL DE EXCLUSÃO (lançamento de grupo) -->

@@ -1,0 +1,14 @@
+<button type="button" class="icon-selector" (click)="abrir()">
+	<span class="icon-selector-preview" [style.background]="icone ? cor : '#eef0f3'">
+		<span class="material-icons">{{ icone || "category" }}</span>
+	</span>
+
+	<span class="icon-selector-label">
+		{{ icone ? "Alterar ícone" : "Selecionar ícone" }}
+	</span>
+
+	<span class="material-icons icon-selector-arrow">expand_more</span>
+</button>
+
+<app-icon-picker-modal [aberto]="modalAberto" (fechar)="fechar()" (selecionar)="selecionar($event)">
+</app-icon-picker-modal>

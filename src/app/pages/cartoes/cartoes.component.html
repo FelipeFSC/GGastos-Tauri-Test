@@ -39,11 +39,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="icone">Ícone</label>
+                    <label>Ícone</label>
 
-                    <input id="icone" [(ngModel)]="icone" name="icone" placeholder="credit_card" />
+                    <app-icon-picker-button [icone]="icone" [cor]="cor" (iconeSelecionado)="icone = $event">
+                    </app-icon-picker-button>
 
-                    <small>Nome do Material Icon</small>
+                    <small>Clique para selecionar um ícone.</small>
                 </div>
 
                 <div class="form-row">
@@ -216,7 +217,7 @@
 
                     <!-- LISTA DE FATURAS -->
                     <div class="invoice-list" *ngIf="faturasPorCartao[c.id]?.length">
-                        <div class="invoice" *ngFor="let f of faturasPorCartao[c.id]">
+                        <a class="invoice" *ngFor="let f of faturasPorCartao[c.id]" [routerLink]="['/fatura', f.id]">
                             <div class="invoice-main">
                                 <div class="invoice-month">
                                     <span>Referência</span>
@@ -256,14 +257,7 @@
                                     </span>
                                 </div>
                             </div>
-
-                            <!-- PAGAR -->
-                            <button *ngIf="f.status !== 'paga'" class="btn-pay" (click)="pagar(f.id, c.id)">
-                                <span class="material-icons"> check </span>
-
-                                Marcar como paga
-                            </button>
-                        </div>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -277,86 +271,5 @@
                 <span> Adicione seu primeiro cartão ao lado. </span>
             </div>
         </section>
-    </div>
-
-    <div class="icon-modal-overlay" *ngIf="iconeModalAberto" (click)="fecharSeletorIcone()">
-        <div class="icon-modal" (click)="$event.stopPropagation()">
-            <!-- HEADER -->
-
-            <div class="icon-modal-header">
-                <div>
-                    <h3>Selecionar ícone</h3>
-
-                    <p>Escolha um ícone para sua categoria.</p>
-                </div>
-
-                <button type="button" class="icon-modal-close" (click)="fecharSeletorIcone()" title="Fechar">
-                    <span class="material-icons"> close </span>
-                </button>
-            </div>
-
-            <!-- BUSCA -->
-
-            <div class="icon-search">
-                <span class="material-icons"> search </span>
-
-                <input [(ngModel)]="buscaIcone" name="buscaIcone" (ngModelChange)="filtrarIcones()"
-                    placeholder="Pesquisar ícone..." autocomplete="off" />
-
-                <button *ngIf="buscaIcone" type="button" class="icon-search-clear"
-                    (click)="buscaIcone = ''; filtrarIcones()" title="Limpar busca">
-                    <span class="material-icons"> close </span>
-                </button>
-            </div>
-
-            <!-- INFORMAÇÃO -->
-
-            <div class="icon-results-info" *ngIf="iconesFiltrados.length">
-                <span>
-                    {{ iconesFiltrados.length }}
-                    ícone(s) encontrado(s)
-                </span>
-
-                <span *ngIf="iconesFiltrados.length > 300">
-                    Mostrando os primeiros 300
-                </span>
-            </div>
-
-            <!-- GRID -->
-
-            <div class="icon-grid" *ngIf="iconesVisiveis().length">
-                <button type="button" class="icon-option" *ngFor="let iconeItem of iconesVisiveis()"
-                    (click)="selecionarIcone(iconeItem)" [title]="iconeItem">
-                    <span class="material-icons">
-                        {{ iconeItem }}
-                    </span>
-                </button>
-            </div>
-
-            <!-- NENHUM RESULTADO -->
-
-            <div class="icon-empty" *ngIf="iconesFiltrados.length === 0">
-                <span class="material-icons"> search_off </span>
-
-                <strong> Nenhum ícone encontrado </strong>
-
-                <span> Tente pesquisar por outro nome. </span>
-            </div>
-
-            <!-- ERRO AO CARREGAR -->
-
-            <div class="icon-empty" *ngIf="icones.length === 0">
-                <span class="material-icons"> error_outline </span>
-
-                <strong> Não foi possível carregar os ícones </strong>
-
-                <span>
-                    Verifique se o arquivo
-                    <strong>material-icons.json</strong>
-                    está em
-                    <strong>assets/</strong>.
-                </span>
-            </div>
-        </div>
     </div>
 </div>

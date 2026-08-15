@@ -22,6 +22,13 @@ export const routes: Routes = [
   },
 
   {
+    path: "fatura/:id",
+    loadComponent: () =>
+      import("./pages/fatura/fatura.component")
+        .then((m) => m.FaturaComponent),
+  },
+
+  {
     path: "relatorios",
     loadComponent: () =>
       import("./pages/relatorios/relatorios.component")

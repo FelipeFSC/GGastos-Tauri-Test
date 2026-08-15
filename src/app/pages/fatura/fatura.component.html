@@ -1,0 +1,382 @@
+<div class="fatura-page" *ngIf="fatura">
+    <div class="fatura-container">
+
+        <!-- ================================================= -->
+        <!-- CABEÇALHO -->
+        <!-- ================================================= -->
+
+        <div class="card fatura-header-card">
+            <div class="fatura-nav">
+                <button type="button" class="nav-arrow" [disabled]="!anteriorId" (click)="irParaAnterior()"
+                    title="Fatura anterior">
+                    <span class="material-icons"> chevron_left </span>
+                </button>
+
+                <div class="fatura-titulo-bloco">
+                    <div class="cartao-badge">
+                        <div class="cartao-icon" [style.background]="fatura.cartao_cor || '#4285f4'">
+                            <span class="material-icons">
+                                {{ fatura.cartao_icone || "credit_card" }}
+                            </span>
+                        </div>
+
+                        <strong>{{ fatura.cartao_nome }}</strong>
+
+                        <span class="status-tag atual" *ngIf="fatura.ehAtual">FATURA ATUAL</span>
+                        <span class="status-tag paga" *ngIf="fatura.ehPaga">FATURA PAGA</span>
+                    </div>
+
+                    <h1>Fatura <strong>{{ nomeMes }} {{ fatura.ano_referencia }}</strong></h1>
+                </div>
+
+                <button type="button" class="nav-arrow" [disabled]="!proximaId" (click)="irParaProxima()"
+                    title="Próxima fatura">
+                    <span class="material-icons"> chevron_right </span>
+                </button>
+            </div>
+
+            <!-- CAIXAS -->
+
+            <div class="fatura-boxes">
+                <div class="fatura-box">
+                    <div class="fatura-box-linha">
+                        <span>Saldo mês anterior</span>
+                        <strong [class.credito]="ehCredito(fatura.saldoAnterior)">
+                            R$ {{ valorAbsFormatado(fatura.saldoAnterior) }}
+                            <small *ngIf="ehCredito(fatura.saldoAnterior)">crédito</small>
+                        </strong>
+                    </div>
+
+                    <div class="fatura-box-linha">
+                        <span>Fatura atual</span>
+                        <strong>R$ {{ valorFormatado(fatura.faturaAtual) }}</strong>
+                    </div>
+
+                    <div class="fatura-box-linha">
+                        <span>Fechamento</span>
+                        <strong>{{ fatura.data_fechamento.split('-').reverse().join('/') }}</strong>
+                    </div>
+                </div>
+
+                <div class="fatura-box centralizado">
+                    <span>Vencimento</span>
+                    <strong>{{ fatura.data_vencimento.split('-').reverse().join('/') }}</strong>
+                </div>
+
+                <div class="fatura-box centralizado">
+                    <span>Valor da fatura</span>
+                    <strong [class.credito]="ehCredito(fatura.valorTotal)">
+                        R$ {{ valorAbsFormatado(fatura.valorTotal) }}
+                    </strong>
+                    <small class="credito-nota" *ngIf="ehCredito(fatura.valorTotal)">você tem crédito nesta
+                        fatura</small>
+
+                    <button type="button" class="btn-pagar"
+                        *ngIf="fatura.pagamentos.length === 0 && fatura.valorRestante > 0.01"
+                        (click)="abrirModalPagamento()">
+                        Pagar
+                    </button>
+                </div>
+            </div>
+
+            <!-- DETALHES DO PAGAMENTO -->
+
+            <div class="pagamento-painel" *ngIf="fatura.pagamentos.length > 0">
+                <div class="pagamento-header">Detalhes do pagamento</div>
+
+                <div class="pagamento-corpo">
+                    <div class="pagamento-tabela-wrap">
+                        <table class="pagamento-tabela">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Valor pago</th>
+                                    <th>Conta</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr *ngFor="let p of fatura.pagamentos">
+                                    <td>{{ p.data.split('-').reverse().join('/') }}</td>
+                                    <td>R$ {{ valorFormatado(p.valor) }}</td>
+                                    <td>{{ p.conta_nome || "-" }}</td>
+                                    <td class="pagamento-acoes">
+                                        <button type="button" (click)="abrirModalEdicaoPagamento(p)">Editar</button>
+                                        <button type="button" (click)="excluirPagamento(p.id)">Excluir</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagamento-resumo">
+                        <div>
+                            <span>Valor total pago</span>
+                            <strong>R$ {{ valorFormatado(fatura.valorPago) }}</strong>
+                        </div>
+
+                        <div>
+                            <span>Valor restante</span>
+                            <strong [class.credito]="ehCredito(fatura.valorRestante)">
+                                R$ {{ valorAbsFormatado(fatura.valorRestante) }}
+                                <small *ngIf="ehCredito(fatura.valorRestante)">crédito</small>
+                            </strong>
+                        </div>
+
+                        <button type="button" class="btn-pagar-restante" *ngIf="fatura.valorRestante > 0.01"
+                            (click)="abrirModalPagamento()">
+                            Pagar restante
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================= -->
+        <!-- LANÇAMENTOS -->
+        <!-- ================================================= -->
+
+        <div class="card fatura-lancamentos-card">
+            <div class="fatura-lancamentos-header">
+                <h3>Lançamentos</h3>
+
+                <div class="add-wrapper">
+                    <button type="button" class="btn-add-fatura" (click)="toggleMenuAdicionar()"
+                        title="Adicionar lançamento">
+                        <span class="material-icons"> add </span>
+                    </button>
+
+                    <div class="add-menu" *ngIf="menuAdicionarAberto">
+                        <button type="button" class="add-option receita"
+                            (click)="modal.abrirNovo('receita'); menuAdicionarAberto = false">
+                            <span class="material-icons"> trending_up </span>
+
+                            <div>
+                                <strong>Receita</strong>
+                                <small>Adicionar entrada</small>
+                            </div>
+                        </button>
+
+                        <button type="button" class="add-option despesa"
+                            (click)="modal.abrirNovo('despesa'); menuAdicionarAberto = false">
+                            <span class="material-icons"> trending_down </span>
+
+                            <div>
+                                <strong>Despesa</strong>
+                                <small>Adicionar saída</small>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fatura-filtro">
+                <span class="material-icons"> filter_alt </span>
+
+                <input type="text" placeholder="Filtrar por..." [(ngModel)]="filtro"
+                    (ngModelChange)="aplicarFiltro()" />
+
+                <span class="material-icons"> search </span>
+            </div>
+
+            <div class="fatura-lancamento-row" *ngFor="let l of lancamentosFiltrados">
+                <span class="fatura-lancamento-data"> {{ diaMesFormatado(l.data) }} </span>
+
+                <div class="category-icon" [style.background]="corCategoria(l)" [title]="nomeCategoria(l)">
+                    <span class="material-icons">
+                        {{ iconeCategoria(l) }}
+                    </span>
+                </div>
+
+                <div class="lancamento-description">
+                    <strong>
+                        {{ l.descricao }}
+                    </strong>
+
+                    <span class="category-name">
+                        {{ nomeCategoria(l) }}
+                    </span>
+                </div>
+
+                <div class="lancamento-indicators">
+                    <span *ngIf="ehFixo(l)" class="indicator" title="Lançamento fixo (recorrente)">
+                        <span class="material-icons"> repeat </span>
+                    </span>
+
+                    <span *ngIf="ehParcelado(l)" class="indicator" [title]="'Parcela ' + textoParcela(l)">
+                        <span class="material-icons"> receipt_long </span>
+                        <small>{{ textoParcela(l) }}</small>
+                    </span>
+
+                    <span class="indicator obs-indicator" *ngIf="l.observacao">
+                        <span class="material-icons"> notes </span>
+                        <span class="obs-tooltip">{{ l.observacao }}</span>
+                    </span>
+
+                    <span class="indicator" *ngIf="tagsDoLancamento(l).length" [title]="tituloTags(l)">
+                        <span class="material-icons"> sell </span>
+                        <small *ngIf="tagsDoLancamento(l).length > 1">{{ tagsDoLancamento(l).length }}</small>
+                    </span>
+
+                    <span class="indicator" *ngIf="quantidadeAnexos(l) > 0"
+                        [title]="quantidadeAnexos(l) + ' anexo(s)'">
+                        <span class="material-icons"> attach_file </span>
+                        <small *ngIf="quantidadeAnexos(l) > 1">{{ quantidadeAnexos(l) }}</small>
+                    </span>
+                </div>
+
+                <div class="lancamento-value" [class.valor-receita]="l.tipo === 'receita'"
+                    [class.valor-despesa]="l.tipo === 'despesa'">
+                    <span>
+                        {{ l.tipo === "receita" ? "+" : "-" }}
+                        R$ {{ valorFormatado(l.valor) }}
+                    </span>
+                </div>
+
+                <button type="button" class="lancamento-jewel" [class.confirmado]="+l.confirmado === 1" [title]="
+            +l.confirmado === 1
+              ? 'Confirmado — clique para desmarcar'
+              : 'Marcar como pago/recebido'
+          " (click)="alternarConfirmado(l)">
+                    <span class="material-icons">
+                        {{ +l.confirmado === 1 ? "check_circle" : "radio_button_unchecked" }}
+                    </span>
+                </button>
+
+                <div class="lancamento-actions">
+                    <button type="button" class="btn-row-action" title="Editar" (click)="modal.abrirEdicao(l)">
+                        <span class="material-icons"> edit </span>
+                    </button>
+
+                    <button type="button" class="btn-row-action delete" title="Excluir" (click)="remover(l)">
+                        <span class="material-icons"> delete </span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="empty-lancamentos" *ngIf="lancamentosFiltrados.length === 0">
+                <div class="empty-icon">
+                    <span class="material-icons"> receipt_long </span>
+                </div>
+
+                <strong> Nenhum lançamento nesta fatura </strong>
+
+                <span> Adicione uma receita ou despesa para começar. </span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="fatura-page" *ngIf="!fatura">
+    <p class="fatura-nao-encontrada">Fatura não encontrada.</p>
+</div>
+
+<!-- ===================================================== -->
+<!-- MODAL (criar/editar lançamento) -->
+<!-- ===================================================== -->
+
+<app-lancamento-modal #modal [origemFixa]="fatura ? { tipo: 'cartao', id: fatura.cartao_id } : null"
+    [dataSugerida]="fatura ? fatura.data_fechamento : null" (salvo)="carregar()"></app-lancamento-modal>
+
+<!-- ===================================================== -->
+<!-- MODAL DE PAGAMENTO -->
+<!-- ===================================================== -->
+
+<div class="modal-overlay" *ngIf="modalPagamentoAberto" (click)="fecharModalPagamento()">
+    <div class="modal pagamento-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <div>
+                <h2>{{ pagamentoEmEdicaoId ? "Editar pagamento" : "Pagar fatura" }}</h2>
+            </div>
+
+            <button type="button" class="modal-close" (click)="fecharModalPagamento()" title="Fechar">
+                <span class="material-icons"> close </span>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label> Valor </label>
+
+                    <div class="money-input">
+                        <span> R$ </span>
+                        <input type="text" [(ngModel)]="formPagamento.valor" placeholder="0,00"
+                            inputmode="decimal" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label> Data </label>
+                    <input type="date" [(ngModel)]="formPagamento.data" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label> Conta </label>
+
+                <select [(ngModel)]="formPagamento.contaId">
+                    <option value="">Selecione uma conta</option>
+                    <option *ngFor="let c of contas" [value]="c.id">{{ c.nome }}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="fecharModalPagamento()">
+                Cancelar
+            </button>
+
+            <button type="button" class="btn-save" (click)="salvarPagamento()" [disabled]="salvandoPagamento">
+                <span class="material-icons"> save </span>
+                {{ salvandoPagamento ? "Salvando..." : (pagamentoEmEdicaoId ? "Salvar" : "Pagar fatura") }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- MODAL DE EXCLUSÃO (lançamento de grupo) -->
+<!-- ===================================================== -->
+
+<div class="modal-overlay" *ngIf="modalExcluirAberto" (click)="fecharModalExcluir()">
+    <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <div>
+                <h2>Excluir lançamento</h2>
+                <p>Este lançamento faz parte de uma repetição. O que você quer excluir?</p>
+            </div>
+
+            <button type="button" class="modal-close" (click)="fecharModalExcluir()" title="Fechar">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="repeat-options scope-options">
+                <button type="button" (click)="confirmarExclusao('todos')">
+                    <strong>Excluir todos</strong>
+                    <span>Passadas e futuras</span>
+                </button>
+
+                <button type="button" (click)="confirmarExclusao('atual_e_proximos')">
+                    <strong>Excluir o atual e os próximos</strong>
+                    <span>A partir desta ocorrência</span>
+                </button>
+
+                <button type="button" (click)="confirmarExclusao('atual')">
+                    <strong>Excluir apenas o atual</strong>
+                    <span>Só esta ocorrência</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="fecharModalExcluir()">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>

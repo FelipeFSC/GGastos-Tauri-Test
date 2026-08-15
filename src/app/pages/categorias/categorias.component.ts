@@ -5,6 +5,7 @@ import {
     DatabaseService,
     USUARIO_LOCAL_ID,
 } from "../../services/database.service";
+import { IconPickerButtonComponent } from "../../shared/icon-picker/icon-picker-button.component";
 
 interface Categoria {
     id: string;
@@ -18,25 +19,12 @@ interface Categoria {
 @Component({
     selector: "app-categorias",
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, IconPickerButtonComponent],
     templateUrl: "./categorias.component.html",
     styleUrl: "./categorias.component.css",
 })
 export class CategoriasComponent implements OnInit {
     categorias: Categoria[] = [];
-
-    // =========================================================
-    // ÍCONES
-    // =========================================================
-
-    icones: string[] = [];
-    iconesFiltrados: string[] = [];
-
-    iconeModalAberto = false;
-    buscaIcone = "";
-
-    // Indica qual campo está sendo preenchido
-    campoIconeAtual: "novo" | "edicao" = "novo";
 
     // =========================================================
     // NOVA CATEGORIA
@@ -80,7 +68,6 @@ export class CategoriasComponent implements OnInit {
 
     async ngOnInit() {
         await this.carregar();
-        await this.carregarIcones();
     }
 
     // =========================================================
@@ -101,108 +88,6 @@ export class CategoriasComponent implements OnInit {
         return this.categorias.filter(
             (categoria) => categoria.categoria_pai_id === categoriaPaiId,
         );
-    }
-
-    // =========================================================
-    // CARREGAR ÍCONES
-    // =========================================================
-
-    async carregarIcones() {
-        try {
-            const response = await fetch("assets/material-icons.json");
-
-            if (!response.ok) {
-                throw new Error(
-                    `Erro ao carregar material-icons.json: ${response.status}`,
-                );
-            }
-
-            const dados = await response.json();
-
-            if (!Array.isArray(dados)) {
-                throw new Error("O arquivo material-icons.json não contém um array.");
-            }
-
-            const nomes = dados
-                .filter((icone: any) => {
-                    const unsupported = Array.isArray(icone.unsupported_families)
-                        ? icone.unsupported_families
-                        : [];
-
-                    // Se "Material Icons" NÃO está nos
-                    // unsupported_families, significa que
-                    // o ícone suporta Material Icons.
-                    return !unsupported.includes("Material Icons");
-                })
-                .map((icone: any) => icone.name)
-                .filter(
-                    (nome: unknown): nome is string =>
-                        typeof nome === "string" && nome.trim().length > 0,
-                );
-
-            /*
-             * Remove nomes duplicados.
-             */
-            this.icones = [...new Set(nomes)].sort((a, b) => a.localeCompare(b));
-
-            this.iconesFiltrados = [...this.icones];
-
-            console.log(`Ícones Material Icons carregados: ${this.icones.length}`);
-        } catch (error) {
-            console.error("Erro ao carregar ícones:", error);
-
-            this.icones = [];
-            this.iconesFiltrados = [];
-        }
-    }
-    // =========================================================
-    // SELETOR DE ÍCONES
-    // =========================================================
-
-    abrirSeletorIcone(campo: "novo" | "edicao") {
-        this.campoIconeAtual = campo;
-
-        this.buscaIcone = "";
-
-        this.iconesFiltrados = [...this.icones];
-
-        this.iconeModalAberto = true;
-    }
-
-    fecharSeletorIcone() {
-        this.iconeModalAberto = false;
-        this.buscaIcone = "";
-    }
-
-    filtrarIcones() {
-        const busca = this.buscaIcone.trim().toLowerCase();
-
-        if (!busca) {
-            this.iconesFiltrados = [...this.icones];
-            return;
-        }
-
-        this.iconesFiltrados = this.icones.filter((icone) =>
-            icone.toLowerCase().includes(busca),
-        );
-    }
-
-    selecionarIcone(icone: string) {
-        if (this.campoIconeAtual === "novo") {
-            this.icone = icone;
-        } else {
-            this.iconeEdicao = icone;
-        }
-
-        this.fecharSeletorIcone();
-    }
-
-    /**
-     * Mostra no máximo 300 ícones de uma vez.
-     * A busca continua funcionando normalmente.
-     */
-    iconesVisiveis(): string[] {
-        return this.iconesFiltrados.slice(0, 300);
     }
 
     // =========================================================

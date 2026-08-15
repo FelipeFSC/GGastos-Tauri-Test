@@ -5,6 +5,7 @@ import {
 	DatabaseService,
 	USUARIO_LOCAL_ID,
 } from "../../services/database.service";
+import { IconPickerButtonComponent } from "../../shared/icon-picker/icon-picker-button.component";
 
 interface Conta {
 	id: string;
@@ -18,7 +19,7 @@ interface Conta {
 @Component({
 	selector: "app-contas",
 	standalone: true,
-	imports: [CommonModule, FormsModule],
+	imports: [CommonModule, FormsModule, IconPickerButtonComponent],
 	templateUrl: "./contas.component.html",
 	styleUrl: "./contas.component.css",
 })

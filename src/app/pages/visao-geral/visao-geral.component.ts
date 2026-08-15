@@ -130,7 +130,7 @@ export class VisaoGeralComponent implements OnInit {
       this.carregarTotais(inicio, fim),
       this.carregarContas(),
       this.carregarCartoes(),
-      this.carregarContasAPagar(),
+      this.carregarContasAPagar(inicio, fim),
       this.carregarMaioresGastos(inicio, fim),
     ]);
   }
@@ -188,17 +188,14 @@ export class VisaoGeralComponent implements OnInit {
     this.faturasMes = faturasMes;
   }
 
-  private async carregarContasAPagar(): Promise<void> {
-    const hoje = new Date().toISOString().slice(0, 10);
-
+  private async carregarContasAPagar(inicio: string, fim: string): Promise<void> {
     this.contasAPagar = await this.db.query<ContaAPagar>(
       `SELECT l.id, l.descricao, l.valor, l.data, c.icone, c.cor
        FROM lancamentos l
        LEFT JOIN categorias c ON c.id = l.categoria_id
-       WHERE l.usuario_id = ? AND l.tipo = 'despesa' AND l.confirmado = 0 AND l.data >= ?
-       ORDER BY l.data ASC
-       LIMIT 5`,
-      [USUARIO_LOCAL_ID, hoje]
+       WHERE l.usuario_id = ? AND l.tipo = 'despesa' AND l.confirmado = 0 AND l.data BETWEEN ? AND ?
+       ORDER BY l.data ASC`,
+      [USUARIO_LOCAL_ID, inicio, fim]
     );
   }
 

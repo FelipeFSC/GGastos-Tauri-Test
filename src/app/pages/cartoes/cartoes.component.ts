@@ -1,10 +1,12 @@
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
+import { RouterLink } from "@angular/router";
 import {
     DatabaseService,
     USUARIO_LOCAL_ID,
 } from "../../services/database.service";
+import { IconPickerButtonComponent } from "../../shared/icon-picker/icon-picker-button.component";
 
 interface Conta {
     id: string;
@@ -36,7 +38,7 @@ interface Fatura {
 @Component({
     selector: "app-cartoes",
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterLink, IconPickerButtonComponent],
     templateUrl: "./cartoes.component.html",
     styleUrl: "./cartoes.component.css",
 })
@@ -51,15 +53,6 @@ export class CartoesComponent implements OnInit {
     diaFechamento = 1;
     diaVencimento = 1;
     contaPagamentoId = "";
-
-    icones: string[] = [];
-    iconesFiltrados: string[] = [];
-
-    iconeModalAberto = false;
-    buscaIcone = "";
-    campoIconeAtual: "novo" | "edicao" = "novo";
-
-    iconeEdicao = "";
 
     editandoId: string | null = null;
 
@@ -110,11 +103,6 @@ export class CartoesComponent implements OnInit {
        ORDER BY f.ano_referencia DESC, f.mes_referencia DESC`,
             [cartaoId],
         );
-    }
-
-    async pagar(faturaId: string, cartaoId: string) {
-        await this.db.pagarFatura(faturaId);
-        await this.carregarFaturas(cartaoId);
     }
 
     async adicionar(event: Event) {
@@ -204,42 +192,6 @@ export class CartoesComponent implements OnInit {
         this.diaFechamento = 1;
         this.diaVencimento = 1;
         this.contaPagamentoId = "";
-    }
-
-    fecharSeletorIcone() {
-        this.iconeModalAberto = false;
-        this.buscaIcone = "";
-    }
-
-    filtrarIcones() {
-        const busca = this.buscaIcone.trim().toLowerCase();
-
-        if (!busca) {
-            this.iconesFiltrados = [...this.icones];
-            return;
-        }
-
-        this.iconesFiltrados = this.icones.filter((icone) =>
-            icone.toLowerCase().includes(busca),
-        );
-    }
-
-    selecionarIcone(icone: string) {
-        if (this.campoIconeAtual === "novo") {
-            this.icone = icone;
-        } else {
-            this.iconeEdicao = icone;
-        }
-
-        this.fecharSeletorIcone();
-    }
-
-    /**
-     * Mostra no máximo 300 ícones de uma vez.
-     * A busca continua funcionando normalmente.
-     */
-    iconesVisiveis(): string[] {
-        return this.iconesFiltrados.slice(0, 300);
     }
 
     async remover(id: string) {

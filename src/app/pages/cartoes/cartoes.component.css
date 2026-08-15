@@ -408,6 +408,17 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.invoice:hover {
+  border-color: #c5cad3;
+  background: #fafbfc;
 }
 
 .invoice-main {
@@ -455,34 +466,6 @@
 .status-paid {
   background: #edf7ed;
   color: #3c7a3c;
-}
-
-
-/* PAGAMENTO */
-
-.btn-pay {
-  height: 34px;
-
-  padding: 0 10px;
-
-  border: 1px solid #dfe3e8;
-  border-radius: 7px;
-
-  background: white;
-  color: #4285f4;
-
-  cursor: pointer;
-
-  display: flex;
-  align-items: center;
-  gap: 5px;
-
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.btn-pay:hover {
-  background: #eef4ff;
 }
 
 

@@ -1,0 +1,1206 @@
+.fatura-page {
+    min-height: 100%;
+    padding: 32px;
+    color: #202124;
+    box-sizing: border-box;
+}
+
+.fatura-container {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+.fatura-nao-encontrada {
+    text-align: center;
+    color: #9ca3af;
+}
+
+.card {
+    background: white;
+
+    border: 1px solid #e5e8ec;
+    border-radius: 14px;
+
+    padding: 22px 24px;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.035);
+}
+
+/* ================================================= */
+/* CABEÇALHO */
+/* ================================================= */
+
+.fatura-nav {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    margin-bottom: 20px;
+}
+
+.nav-arrow {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+
+    border: 1px solid #e2e5e9;
+    border-radius: 10px;
+
+    background: white;
+
+    color: #6b7280;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-arrow:hover:not(:disabled) {
+    background: #f5f7fa;
+    color: #202124;
+}
+
+.nav-arrow:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.fatura-titulo-bloco {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 8px;
+
+    text-align: center;
+}
+
+.cartao-badge {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+.cartao-icon {
+    width: 30px;
+    height: 30px;
+
+    border-radius: 8px;
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cartao-icon .material-icons {
+    font-size: 17px;
+}
+
+.cartao-badge strong {
+    font-size: 15px;
+    color: #202124;
+}
+
+.status-tag {
+    padding: 3px 9px;
+
+    border-radius: 20px;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 0.3px;
+}
+
+.status-tag.atual {
+    background: #eaf1ff;
+    color: #2c5fce;
+}
+
+.status-tag.paga {
+    background: #edf7ed;
+    color: #3c7a3c;
+}
+
+.fatura-titulo-bloco h1 {
+    margin: 0;
+
+    font-size: 20px;
+    font-weight: 400;
+
+    color: #6b7280;
+}
+
+.fatura-titulo-bloco h1 strong {
+    font-weight: 700;
+    color: #202124;
+}
+
+/* ================================================= */
+/* CAIXAS */
+/* ================================================= */
+
+.fatura-boxes {
+    display: grid;
+
+    grid-template-columns: 1.4fr 1fr 1fr;
+
+    gap: 12px;
+}
+
+.fatura-box {
+    padding: 14px 16px;
+
+    border: 1px solid #edf0f3;
+    border-radius: 10px;
+
+    background: #fafbfc;
+}
+
+.fatura-box.centralizado {
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    text-align: center;
+}
+
+.fatura-box.centralizado>span {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #9ca3af;
+}
+
+.fatura-box.centralizado>strong {
+    font-size: 17px;
+    color: #202124;
+}
+
+.credito {
+    color: #3c7a3c !important;
+}
+
+.credito-nota {
+    font-size: 10px;
+    color: #3c7a3c;
+}
+
+.fatura-box-linha strong small,
+.pagamento-resumo strong small {
+    margin-left: 4px;
+
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+
+    color: #3c7a3c;
+}
+
+.fatura-box-linha {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    padding: 4px 0;
+}
+
+.fatura-box-linha span {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #9ca3af;
+}
+
+.fatura-box-linha strong {
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.btn-pagar,
+.btn-pagar-restante {
+    height: 30px;
+
+    padding: 0 14px;
+
+    border: none;
+    border-radius: 20px;
+
+    background: #34a853;
+    color: white;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.btn-pagar:hover,
+.btn-pagar-restante:hover {
+    filter: brightness(0.94);
+}
+
+/* ================================================= */
+/* DETALHES DO PAGAMENTO */
+/* ================================================= */
+
+.pagamento-painel {
+    margin-top: 16px;
+
+    border: 1px solid #cdeccd;
+    border-radius: 10px;
+
+    overflow: hidden;
+}
+
+.pagamento-header {
+    padding: 10px 16px;
+
+    background: #34a853;
+    color: white;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    text-align: center;
+}
+
+.pagamento-corpo {
+    padding: 16px;
+
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 16px;
+
+    align-items: center;
+
+    justify-content: space-between;
+}
+
+.pagamento-tabela-wrap {
+    flex: 1;
+    min-width: 260px;
+
+    overflow-x: auto;
+}
+
+.pagamento-tabela {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.pagamento-tabela th {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #9ca3af;
+
+    text-align: left;
+
+    padding: 4px 10px 8px 0;
+
+    border-bottom: 1px solid #edf0f3;
+}
+
+.pagamento-tabela td {
+    font-size: 12px;
+    color: #4b5563;
+
+    padding: 8px 10px 8px 0;
+
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.pagamento-acoes {
+    display: flex;
+    gap: 10px;
+}
+
+.pagamento-acoes button {
+    border: none;
+    background: transparent;
+
+    color: #4285f4;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    padding: 0;
+}
+
+.pagamento-acoes button:last-child {
+    color: #d93025;
+}
+
+.pagamento-acoes button:hover {
+    text-decoration: underline;
+}
+
+.pagamento-resumo {
+    display: flex;
+    flex-direction: column;
+
+    align-items: flex-end;
+
+    gap: 6px;
+
+    min-width: 160px;
+}
+
+.pagamento-resumo>div {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    width: 100%;
+}
+
+.pagamento-resumo span {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #9ca3af;
+}
+
+.pagamento-resumo strong {
+    font-size: 13px;
+    color: #202124;
+}
+
+.pagamento-resumo .btn-pagar-restante {
+    margin-top: 4px;
+}
+
+/* ================================================= */
+/* LANÇAMENTOS — CABEÇALHO */
+/* ================================================= */
+
+.fatura-lancamentos-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 14px;
+}
+
+.fatura-lancamentos-header h3 {
+    margin: 0;
+
+    font-size: 16px;
+    font-weight: 700;
+
+    color: #202124;
+}
+
+.add-wrapper {
+    position: relative;
+}
+
+.btn-add-fatura {
+    width: 32px;
+    height: 32px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: #d93025;
+    color: white;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-add-fatura:hover {
+    filter: brightness(0.92);
+}
+
+.add-menu {
+    position: absolute;
+
+    top: calc(100% + 8px);
+    left: 0;
+
+    width: 210px;
+
+    padding: 6px;
+
+    background: white;
+
+    border: 1px solid #e4e7eb;
+    border-radius: 11px;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+    z-index: 50;
+}
+
+.add-option {
+    width: 100%;
+
+    border: none;
+    background: transparent;
+
+    padding: 10px;
+
+    border-radius: 8px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.add-option:hover {
+    background: #f7f8fa;
+}
+
+.add-option>.material-icons {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 8px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-option.receita>.material-icons {
+    background: #edf7ed;
+    color: #3c7a3c;
+}
+
+.add-option.despesa>.material-icons {
+    background: #fff4e5;
+    color: #a15c00;
+}
+
+.add-option div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.add-option strong {
+    font-size: 13px;
+    color: #30343b;
+}
+
+.add-option small {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+/* ================================================= */
+/* FILTRO */
+/* ================================================= */
+
+.fatura-filtro {
+    height: 42px;
+
+    margin-bottom: 8px;
+
+    padding: 0 14px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    background: #f5f6f8;
+    border-radius: 10px;
+}
+
+.fatura-filtro input {
+    flex: 1;
+
+    height: 100%;
+
+    border: none;
+    background: transparent;
+
+    outline: none;
+
+    font-size: 13px;
+}
+
+.fatura-filtro>.material-icons {
+    color: #9ca3af;
+    font-size: 18px;
+}
+
+/* ================================================= */
+/* LINHA DE LANÇAMENTO */
+/* ================================================= */
+
+.fatura-lancamento-row {
+    min-height: 62px;
+
+    padding: 8px 0;
+
+    display: grid;
+
+    grid-template-columns:
+        46px 38px minmax(150px, 1fr) auto auto 28px 72px;
+
+    align-items: center;
+
+    gap: 12px;
+
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.fatura-lancamento-row:last-child {
+    border-bottom: none;
+}
+
+.fatura-lancamento-row:hover {
+    background: #fafcff;
+}
+
+.fatura-lancamento-data {
+    font-size: 12px;
+    color: #9ca3af;
+
+    text-align: center;
+}
+
+.category-icon {
+    width: 36px;
+    height: 36px;
+
+    border-radius: 9px;
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+}
+
+.category-icon .material-icons {
+    font-size: 19px;
+}
+
+.lancamento-description {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+.lancamento-description strong {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #30343b;
+}
+
+.category-name {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 11px;
+
+    color: #9ca3af;
+}
+
+.lancamento-indicators {
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    white-space: nowrap;
+}
+
+.indicator {
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    color: #8a9099;
+}
+
+.indicator .material-icons {
+    font-size: 17px;
+}
+
+.indicator small {
+    font-size: 10px;
+    color: #8a9099;
+}
+
+.obs-indicator {
+    position: relative;
+    cursor: default;
+}
+
+.obs-tooltip {
+    display: none;
+
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+
+    min-width: 140px;
+    max-width: 240px;
+
+    padding: 8px 10px;
+
+    background: #202124;
+    color: #fff;
+
+    border-radius: 8px;
+
+    font-size: 12px;
+    line-height: 1.4;
+
+    white-space: normal;
+    word-break: break-word;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+
+    z-index: 20;
+}
+
+.obs-indicator:hover .obs-tooltip {
+    display: block;
+}
+
+.lancamento-value {
+    min-width: 100px;
+
+    text-align: right;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.valor-receita {
+    color: #3c7a3c;
+}
+
+.valor-despesa {
+    color: #d93025;
+}
+
+.lancamento-jewel {
+    width: 28px;
+    height: 28px;
+
+    border: none;
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #b8bec8;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.lancamento-jewel:hover {
+    background: #f1f3f5;
+    color: #8b929d;
+}
+
+.lancamento-jewel.confirmado {
+    color: #2f9e44;
+}
+
+.lancamento-jewel.confirmado:hover {
+    background: #ebfbee;
+    color: #2f6b2f;
+}
+
+.lancamento-jewel .material-icons {
+    font-size: 19px;
+}
+
+.lancamento-actions {
+    display: flex;
+
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 2px;
+}
+
+.btn-row-action {
+    width: 30px;
+    height: 30px;
+
+    border: none;
+    border-radius: 7px;
+
+    background: transparent;
+
+    color: #9ca3af;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-row-action:hover {
+    background: #eef4ff;
+    color: #4285f4;
+}
+
+.btn-row-action.delete:hover {
+    background: #fff0f0;
+    color: #d93025;
+}
+
+.btn-row-action .material-icons {
+    font-size: 17px;
+}
+
+/* ================================================= */
+/* VAZIO */
+/* ================================================= */
+
+.empty-lancamentos {
+    min-height: 220px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+}
+
+.empty-icon {
+    width: 58px;
+    height: 58px;
+
+    margin-bottom: 14px;
+
+    border-radius: 14px;
+
+    background: #f1f4f8;
+
+    color: #b9bec7;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-icon .material-icons {
+    font-size: 28px;
+}
+
+.empty-lancamentos strong {
+    font-size: 14px;
+    color: #555b66;
+}
+
+.empty-lancamentos>span:last-child {
+    margin-top: 5px;
+
+    font-size: 12px;
+
+    color: #9ca3af;
+}
+
+/* ================================================= */
+/* MODAIS (pagamento / exclusão) */
+/* ================================================= */
+
+.modal-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(15, 23, 42, 0.45);
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px;
+
+    z-index: 1000;
+
+    backdrop-filter: blur(2px);
+}
+
+.modal {
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+
+    background: white;
+
+    border-radius: 16px;
+
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+}
+
+.modal.pagamento-modal {
+    max-width: 440px;
+}
+
+.modal-header {
+    padding: 22px 24px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    border-bottom: 1px solid #edf0f3;
+}
+
+.modal-header h2 {
+    margin: 0;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    color: #202124;
+}
+
+.modal-header p {
+    margin: 5px 0 0;
+
+    color: #8a9099;
+
+    font-size: 13px;
+}
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: #9ca3af;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.modal-body {
+    padding: 24px;
+
+    overflow-y: auto;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    font-size: 13px;
+
+    font-weight: 600;
+
+    color: #374151;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    height: 42px;
+
+    padding: 0 12px;
+
+    border: 1px solid #dfe3e8;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #4285f4;
+
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+}
+
+.form-row {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 14px;
+}
+
+.money-input {
+    position: relative;
+}
+
+.money-input span {
+    position: absolute;
+
+    left: 12px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    font-size: 13px;
+
+    color: #9ca3af;
+}
+
+.money-input input {
+    padding-left: 38px;
+}
+
+.repeat-options {
+    display: grid;
+
+    grid-template-columns: 1fr;
+
+    gap: 10px;
+}
+
+.repeat-options button {
+    padding: 12px;
+
+    text-align: left;
+
+    border: 1px solid #dfe3e8;
+
+    border-radius: 9px;
+
+    background: white;
+
+    cursor: pointer;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+.repeat-options button:hover {
+    border-color: #c5cad3;
+}
+
+.repeat-options strong {
+    font-size: 12px;
+
+    color: #374151;
+}
+
+.repeat-options span {
+    font-size: 11px;
+
+    color: #9ca3af;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+
+    border-top: 1px solid #edf0f3;
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 8px;
+}
+
+.btn-cancel,
+.btn-save {
+    height: 40px;
+
+    padding: 0 16px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 6px;
+}
+
+.btn-cancel {
+    border: 1px solid #dfe3e8;
+
+    background: white;
+
+    color: #6b7280;
+}
+
+.btn-cancel:hover {
+    background: #f5f6f8;
+}
+
+.btn-save {
+    border: none;
+
+    background: #34a853;
+
+    color: white;
+}
+
+.btn-save:hover {
+    filter: brightness(0.92);
+}
+
+.btn-save:disabled {
+    opacity: 0.65;
+
+    cursor: not-allowed;
+
+    filter: none;
+}
+
+.btn-save .material-icons {
+    font-size: 18px;
+}
+
+/* ================================================= */
+/* RESPONSIVO */
+/* ================================================= */
+
+@media (max-width: 700px) {
+    .fatura-boxes {
+        grid-template-columns: 1fr;
+    }
+
+    .fatura-lancamento-row {
+        grid-template-columns:
+            36px 34px 1fr auto 70px;
+    }
+
+    .lancamento-indicators {
+        grid-column: 3;
+
+        grid-row: 2;
+
+        margin-top: -6px;
+    }
+
+    .lancamento-jewel {
+        display: none;
+    }
+}
+
+@media (max-width: 500px) {
+    .fatura-page {
+        padding: 16px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .pagamento-corpo {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+    .pagamento-resumo {
+        align-items: stretch;
+    }
+}
