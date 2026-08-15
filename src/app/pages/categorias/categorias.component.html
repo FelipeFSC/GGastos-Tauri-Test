@@ -1,552 +1,410 @@
 <div class="categorias-page">
+	<div class="page-header">
+		<div>
+			<h2>Categorias</h2>
 
-  <div class="page-header">
-    <div>
-      <h2>Categorias</h2>
-      <p>Organize suas receitas e despesas.</p>
-    </div>
-  </div>
+			<p>Organize suas receitas e despesas.</p>
+		</div>
+	</div>
 
+	<div class="content-grid">
+		<!-- ================================================= -->
+		<!-- NOVA CATEGORIA -->
+		<!-- ================================================= -->
 
-  <div class="content-grid">
+		<section class="card form-card">
+			<div class="card-header">
+				<div class="icon-wrapper">
+					<span class="material-icons"> category </span>
+				</div>
 
-    <!-- NOVA CATEGORIA -->
-    <section class="card form-card">
+				<div>
+					<h3>Nova categoria</h3>
 
-      <div class="card-header">
+					<p>Adicione uma categoria principal.</p>
+				</div>
+			</div>
 
-        <div class="icon-wrapper">
-          <span class="material-icons">category</span>
-        </div>
+			<form (submit)="adicionar($event)">
+				<!-- NOME -->
 
-        <div>
-          <h3>Nova categoria</h3>
-          <p>Adicione uma categoria principal.</p>
-        </div>
+				<div class="form-group">
+					<label for="nome"> Nome da categoria </label>
 
-      </div>
+					<input id="nome" [(ngModel)]="nome" name="nome" placeholder="Ex: Mercado, Salário..." required />
+				</div>
 
+				<!-- TIPO -->
 
-      <form (submit)="adicionar($event)">
+				<div class="form-group">
+					<label for="tipo"> Tipo </label>
 
-        <div class="form-group">
+					<select id="tipo" [(ngModel)]="tipo" name="tipo">
+						<option value="despesa">Despesa</option>
 
-          <label for="nome">
-            Nome da categoria
-          </label>
+						<option value="receita">Receita</option>
+					</select>
+				</div>
 
-          <input
-            id="nome"
-            [(ngModel)]="nome"
-            name="nome"
-            placeholder="Ex: Mercado, Salário..."
-            required
-          />
+				<!-- ÍCONE -->
 
-        </div>
+				<div class="form-group">
+					<label> Ícone </label>
 
+					<button type="button" class="icon-selector" (click)="abrirSeletorIcone('novo')">
+						<span class="icon-selector-preview" [style.background]="icone ? cor : '#eef0f3'">
+							<span class="material-icons">
+								{{ icone || "category" }}
+							</span>
+						</span>
 
-        <div class="form-group">
+						<span class="icon-selector-label">
+							{{ icone ? "Alterar ícone" : "Selecionar ícone" }}
+						</span>
 
-          <label for="tipo">
-            Tipo
-          </label>
+						<span class="material-icons icon-selector-arrow">
+							expand_more
+						</span>
+					</button>
 
-          <select
-            id="tipo"
-            [(ngModel)]="tipo"
-            name="tipo"
-          >
-            <option value="despesa">
-              Despesa
-            </option>
+					<small> Clique para selecionar um ícone. </small>
+				</div>
 
-            <option value="receita">
-              Receita
-            </option>
-          </select>
+				<!-- COR -->
 
-        </div>
+				<div class="form-group">
+					<label for="cor"> Cor </label>
 
+					<div class="color-input">
+						<input id="cor" [(ngModel)]="cor" name="cor" type="color" />
 
-        <div class="form-group">
+						<span>
+							{{ cor }}
+						</span>
+					</div>
+				</div>
 
-          <label for="icone">
-            Ícone
-          </label>
+				<!-- ADICIONAR -->
 
-          <input
-            id="icone"
-            [(ngModel)]="icone"
-            name="icone"
-            placeholder="shopping_cart"
-          />
+				<button class="btn-primary" type="submit">
+					<span class="material-icons"> add </span>
 
-          <small>
-            Nome do Material Icon
-          </small>
+					Adicionar categoria
+				</button>
+			</form>
+		</section>
 
-        </div>
+		<!-- ================================================= -->
+		<!-- LISTA -->
+		<!-- ================================================= -->
 
+		<section class="card categories-card">
+			<div class="card-header">
+				<div>
+					<h3>Suas categorias</h3>
 
-        <div class="form-group">
+					<p>
+						{{ categoriasPrincipais().length }}
+						categoria(s) principal(is)
+					</p>
+				</div>
+			</div>
 
-          <label for="cor">
-            Cor
-          </label>
+			<div class="category-list">
+				<!-- ================================================= -->
+				<!-- CATEGORIAS -->
+				<!-- ================================================= -->
 
-          <div class="color-input">
+				<div class="category-item" *ngFor="let categoria of categoriasPrincipais()">
+					<!-- ================================================= -->
+					<!-- CATEGORIA PRINCIPAL -->
+					<!-- ================================================= -->
 
-            <input
-              id="cor"
-              [(ngModel)]="cor"
-              name="cor"
-              type="color"
-            />
+					<div class="category-main" *ngIf="categoriaEditando !== categoria.id">
+						<!-- ÍCONE -->
 
-            <span>
-              {{ cor }}
-            </span>
+						<div class="category-icon" [style.background]="categoria.cor || '#4285f4'">
+							<span class="material-icons">
+								{{ categoria.icone || "category" }}
+							</span>
+						</div>
 
-          </div>
+						<!-- INFORMAÇÕES -->
 
-        </div>
+						<div class="category-info">
+							<strong>
+								{{ categoria.nome }}
+							</strong>
 
+							<span class="category-type" [class.receita]="categoria.tipo === 'receita'">
+								{{ categoria.tipo === "receita" ? "Receita" : "Despesa" }}
+							</span>
+						</div>
 
-        <button
-          class="btn-primary"
-          type="submit"
-        >
-          <span class="material-icons">
-            add
-          </span>
+						<!-- AÇÕES -->
 
-          Adicionar categoria
-        </button>
+						<div class="category-actions">
+							<!-- SUBCATEGORIA -->
 
-      </form>
+							<button class="btn-subcategory" type="button" (click)="abrirSubcategoria(categoria.id)">
+								<span class="material-icons"> add </span>
+
+								Sub-categoria
+							</button>
 
-    </section>
+							<!-- EDITAR -->
+
+							<button class="btn-edit" type="button" (click)="editarCategoria(categoria)"
+								title="Editar categoria">
+								<span class="material-icons"> edit </span>
+							</button>
 
+							<!-- EXCLUIR -->
+
+							<button class="btn-delete" type="button" (click)="remover(categoria.id)"
+								title="Excluir categoria">
+								<span class="material-icons"> delete </span>
+							</button>
+						</div>
+					</div>
 
-    <!-- LISTA -->
-    <section class="card categories-card">
+					<!-- ================================================= -->
+					<!-- EDIÇÃO DA CATEGORIA -->
+					<!-- ================================================= -->
 
-      <div class="card-header">
+					<div class="category-edit-form" *ngIf="categoriaEditando === categoria.id">
+						<form (submit)="salvarEdicao($event, categoria)">
+							<div class="category-edit-fields">
+								<!-- NOME -->
+
+								<div class="edit-field edit-name">
+									<label> Nome </label>
 
-        <div>
-          <h3>Suas categorias</h3>
+									<input [(ngModel)]="nomeEdicao" name="nomeEdicao" required autofocus />
+								</div>
+
+								<!-- TIPO -->
+
+								<div class="edit-field">
+									<label> Tipo </label>
 
-          <p>
-            {{ categoriasPrincipais().length }}
-            categoria(s) principal(is)
-          </p>
-        </div>
+									<select [(ngModel)]="tipoEdicao" name="tipoEdicao">
+										<option value="despesa">Despesa</option>
 
-      </div>
+										<option value="receita">Receita</option>
+									</select>
+								</div>
 
+								<!-- ÍCONE -->
+
+								<div class="edit-field">
+									<label> Ícone </label>
 
-      <div class="category-list">
+									<button type="button" class="icon-selector" (click)="abrirSeletorIcone('edicao')">
+										<span class="icon-selector-preview"
+											[style.background]="iconeEdicao ? corEdicao : '#eef0f3'">
+											<span class="material-icons">
+												{{ iconeEdicao || "category" }}
+											</span>
+										</span>
+
+										<span class="icon-selector-label">
+											{{ iconeEdicao ? "Alterar ícone" : "Selecionar ícone" }}
+										</span>
+
+										<span class="material-icons icon-selector-arrow">
+											expand_more
+										</span>
+									</button>
+								</div>
+
+								<!-- COR -->
+
+								<div class="edit-field edit-color">
+									<label> Cor </label>
+
+									<div class="edit-color-input">
+										<input [(ngModel)]="corEdicao" name="corEdicao" type="color" />
+
+										<span>
+											{{ corEdicao }}
+										</span>
+									</div>
+								</div>
+							</div>
+
+							<!-- AÇÕES DA EDIÇÃO -->
+
+							<div class="category-edit-actions">
+								<button class="btn-save-edit" type="submit">Salvar</button>
+
+								<button class="btn-cancel-edit" type="button" (click)="cancelarEdicao()">
+									Cancelar
+								</button>
+							</div>
+						</form>
+					</div>
+
+					<!-- ================================================= -->
+					<!-- NOVA SUBCATEGORIA -->
+					<!-- ================================================= -->
+
+					<div class="subcategory-form" *ngIf="categoriaSubAberta === categoria.id">
+						<form (submit)="adicionarSubcategoria($event, categoria)">
+							<input [(ngModel)]="nomeSubcategoria" name="nomeSubcategoria"
+								placeholder="Nome da sub-categoria..." autofocus />
+
+							<button class="btn-add-sub" type="submit">Adicionar</button>
+
+							<button class="btn-cancel-sub" type="button" (click)="cancelarSubcategoria()">
+								Cancelar
+							</button>
+						</form>
+					</div>
+
+					<!-- ================================================= -->
+					<!-- SUBCATEGORIAS -->
+					<!-- ================================================= -->
+
+					<div class="subcategory-list" *ngIf="subcategorias(categoria.id).length">
+						<div class="subcategory" *ngFor="let subcategoria of subcategorias(categoria.id)">
+							<!-- SUBCATEGORIA NORMAL -->
+
+							<ng-container *ngIf="subcategoriaEditando !== subcategoria.id">
+								<span class="subcategory-dot" [style.background]="categoria.cor || '#4285f4'"></span>
+
+								<span class="subcategory-name" (click)="editarSubcategoria(subcategoria)"
+									title="Clique para editar">
+									{{ subcategoria.nome }}
+								</span>
+
+								<button class="subcategory-delete" type="button" (click)="remover(subcategoria.id)"
+									title="Excluir sub-categoria">
+									<span class="material-icons"> delete </span>
+								</button>
+							</ng-container>
+
+							<!-- EDIÇÃO DA SUBCATEGORIA -->
+
+							<ng-container *ngIf="subcategoriaEditando === subcategoria.id">
+								<span class="subcategory-dot" [style.background]="categoria.cor || '#4285f4'"></span>
+
+								<form class="subcategory-edit-form"
+									(submit)="salvarEdicaoSubcategoria($event, subcategoria)">
+									<input [(ngModel)]="nomeSubcategoriaEdicao" name="nomeSubcategoriaEdicao" autofocus
+										required />
 
-        <div
-          class="category-item"
-          *ngFor="let categoria of categoriasPrincipais()"
-        >
+									<button class="btn-sub-save" type="submit" title="Salvar">
+										<span class="material-icons"> check </span>
+									</button>
 
-          <!-- ================================================= -->
-          <!-- CATEGORIA PRINCIPAL -->
-          <!-- ================================================= -->
-
-          <div
-            class="category-main"
-            *ngIf="categoriaEditando !== categoria.id"
-          >
-
-            <div
-              class="category-icon"
-              [style.background]="categoria.cor || '#4285f4'"
-            >
-              <span class="material-icons">
-                {{ categoria.icone || 'category' }}
-              </span>
-            </div>
-
-
-            <div class="category-info">
-
-              <strong>
-                {{ categoria.nome }}
-              </strong>
-
-              <span
-                class="category-type"
-                [class.receita]="categoria.tipo === 'receita'"
-              >
-                {{ categoria.tipo === 'receita'
-                  ? 'Receita'
-                  : 'Despesa' }}
-              </span>
-
-            </div>
-
-
-            <div class="category-actions">
-
-              <!-- DESABILITAR -->
-
-              <button
-                class="btn-toggle"
-                title="Desabilitar categoria"
-              >
-                <span class="material-icons">
-                  toggle_on
-                </span>
-              </button>
-
-
-              <!-- SUBCATEGORIA -->
-
-              <button
-                class="btn-subcategory"
-                (click)="abrirSubcategoria(categoria.id)"
-              >
-                <span class="material-icons">
-                  add
-                </span>
-
-                Sub-categoria
-              </button>
-
-
-              <!-- EDITAR -->
-
-              <button
-                class="btn-edit"
-                (click)="editarCategoria(categoria)"
-                title="Editar categoria"
-              >
-                <span class="material-icons">
-                  edit
-                </span>
-              </button>
-
-
-              <!-- EXCLUIR -->
-
-              <button
-                class="btn-delete"
-                (click)="remover(categoria.id)"
-                title="Excluir categoria"
-              >
-                <span class="material-icons">
-                  delete
-                </span>
-              </button>
-
-            </div>
-
-          </div>
-
-
-          <!-- ================================================= -->
-          <!-- EDIÇÃO DA CATEGORIA -->
-          <!-- ================================================= -->
-
-          <div
-            class="category-edit-form"
-            *ngIf="categoriaEditando === categoria.id"
-          >
-
-            <form
-              (submit)="salvarEdicao($event, categoria)"
-            >
-
-              <div class="category-edit-fields">
-
-                <div class="edit-field edit-name">
-
-                  <label>
-                    Nome
-                  </label>
-
-                  <input
-                    [(ngModel)]="nomeEdicao"
-                    name="nomeEdicao"
-                    required
-                    autofocus
-                  />
-
-                </div>
-
-
-                <div class="edit-field">
-
-                  <label>
-                    Tipo
-                  </label>
-
-                  <select
-                    [(ngModel)]="tipoEdicao"
-                    name="tipoEdicao"
-                  >
-                    <option value="despesa">
-                      Despesa
-                    </option>
-
-                    <option value="receita">
-                      Receita
-                    </option>
-                  </select>
-
-                </div>
-
-
-                <div class="edit-field">
-
-                  <label>
-                    Ícone
-                  </label>
-
-                  <input
-                    [(ngModel)]="iconeEdicao"
-                    name="iconeEdicao"
-                    placeholder="category"
-                  />
-
-                </div>
-
-
-                <div class="edit-field edit-color">
-
-                  <label>
-                    Cor
-                  </label>
-
-                  <div class="edit-color-input">
-
-                    <input
-                      [(ngModel)]="corEdicao"
-                      name="corEdicao"
-                      type="color"
-                    />
-
-                    <span>
-                      {{ corEdicao }}
-                    </span>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-
-              <div class="category-edit-actions">
-
-                <button
-                  class="btn-save-edit"
-                  type="submit"
-                >
-                  <span class="material-icons">
-                    check
-                  </span>
-
-                  Salvar
-                </button>
-
-
-                <button
-                  class="btn-cancel-edit"
-                  type="button"
-                  (click)="cancelarEdicao()"
-                >
-                  Cancelar
-                </button>
-
-              </div>
-
-            </form>
-
-          </div>
-
-
-          <!-- ================================================= -->
-          <!-- NOVA SUBCATEGORIA -->
-          <!-- ================================================= -->
-
-          <div
-            class="subcategory-form"
-            *ngIf="categoriaSubAberta === categoria.id"
-          >
-
-            <form
-              (submit)="adicionarSubcategoria($event, categoria)"
-            >
-
-              <input
-                [(ngModel)]="nomeSubcategoria"
-                name="nomeSubcategoria"
-                placeholder="Nome da sub-categoria..."
-                autofocus
-              />
-
-              <button
-                class="btn-add-sub"
-                type="submit"
-              >
-                Adicionar
-              </button>
-
-              <button
-                class="btn-cancel-sub"
-                type="button"
-                (click)="cancelarSubcategoria()"
-              >
-                Cancelar
-              </button>
-
-            </form>
-
-          </div>
-
-
-          <!-- ================================================= -->
-          <!-- SUBCATEGORIAS -->
-          <!-- ================================================= -->
-
-          <div
-            class="subcategory-list"
-            *ngIf="subcategorias(categoria.id).length"
-          >
-
-            <div
-              class="subcategory"
-              *ngFor="
-                let subcategoria of subcategorias(categoria.id)
-              "
-            >
-
-              <!-- SUBCATEGORIA NORMAL -->
-
-              <ng-container
-                *ngIf="subcategoriaEditando !== subcategoria.id"
-              >
-
-                <span
-                  class="subcategory-dot"
-                  [style.background]="categoria.cor || '#4285f4'"
-                ></span>
-
-
-                <span
-                  class="subcategory-name"
-                  (click)="editarSubcategoria(subcategoria)"
-                  title="Clique para editar"
-                >
-                  {{ subcategoria.nome }}
-                </span>
-
-
-                <button
-                  class="subcategory-delete"
-                  (click)="remover(subcategoria.id)"
-                  title="Excluir sub-categoria"
-                >
-                  <span class="material-icons">
-                    delete
-                  </span>
-                </button>
-
-              </ng-container>
-
-
-              <!-- ================================================= -->
-              <!-- EDIÇÃO DA SUBCATEGORIA -->
-              <!-- ================================================= -->
-
-              <ng-container
-                *ngIf="subcategoriaEditando === subcategoria.id"
-              >
-
-                <span
-                  class="subcategory-dot"
-                  [style.background]="categoria.cor || '#4285f4'"
-                ></span>
-
-
-                <form
-                  class="subcategory-edit-form"
-                  (submit)="salvarEdicaoSubcategoria($event, subcategoria)"
-                >
-
-                  <input
-                    [(ngModel)]="nomeSubcategoriaEdicao"
-                    name="nomeSubcategoriaEdicao"
-                    autofocus
-                    required
-                  />
-
-
-                  <button
-                    class="btn-sub-save"
-                    type="submit"
-                    title="Salvar"
-                  >
-                    <span class="material-icons">
-                      check
-                    </span>
-                  </button>
-
-
-                  <button
-                    class="btn-sub-cancel"
-                    type="button"
-                    (click)="cancelarEdicaoSubcategoria()"
-                    title="Cancelar"
-                  >
-                    <span class="material-icons">
-                      close
-                    </span>
-                  </button>
-
-                </form>
-
-              </ng-container>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <!-- ================================================= -->
-        <!-- VAZIO -->
-        <!-- ================================================= -->
-
-        <div
-          class="empty"
-          *ngIf="categoriasPrincipais().length === 0"
-        >
-
-          <span class="material-icons">
-            category
-          </span>
-
-          <strong>
-            Nenhuma categoria cadastrada
-          </strong>
-
-          <span>
-            Crie sua primeira categoria ao lado.
-          </span>
-
-        </div>
-
-      </div>
-
-    </section>
-
-  </div>
-
+									<button class="btn-sub-cancel" type="button" (click)="cancelarEdicaoSubcategoria()"
+										title="Cancelar">
+										<span class="material-icons"> close </span>
+									</button>
+								</form>
+							</ng-container>
+						</div>
+					</div>
+				</div>
+
+				<!-- ================================================= -->
+				<!-- VAZIO -->
+				<!-- ================================================= -->
+
+				<div class="empty" *ngIf="categoriasPrincipais().length === 0">
+					<span class="material-icons"> category </span>
+
+					<strong> Nenhuma categoria cadastrada </strong>
+
+					<span> Crie sua primeira categoria ao lado. </span>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<!-- ===================================================== -->
+	<!-- MODAL DE SELEÇÃO DE ÍCONE -->
+	<!-- ===================================================== -->
+
+	<div class="icon-modal-overlay" *ngIf="iconeModalAberto" (click)="fecharSeletorIcone()">
+		<div class="icon-modal" (click)="$event.stopPropagation()">
+			<!-- HEADER -->
+
+			<div class="icon-modal-header">
+				<div>
+					<h3>Selecionar ícone</h3>
+
+					<p>Escolha um ícone para sua categoria.</p>
+				</div>
+
+				<button type="button" class="icon-modal-close" (click)="fecharSeletorIcone()" title="Fechar">
+					<span class="material-icons"> close </span>
+				</button>
+			</div>
+
+			<!-- BUSCA -->
+
+			<div class="icon-search">
+				<span class="material-icons"> search </span>
+
+				<input [(ngModel)]="buscaIcone" name="buscaIcone" (ngModelChange)="filtrarIcones()"
+					placeholder="Pesquisar ícone..." autocomplete="off" />
+
+				<button *ngIf="buscaIcone" type="button" class="icon-search-clear"
+					(click)="buscaIcone = ''; filtrarIcones()" title="Limpar busca">
+					<span class="material-icons"> close </span>
+				</button>
+			</div>
+
+			<!-- INFORMAÇÃO -->
+
+			<div class="icon-results-info" *ngIf="iconesFiltrados.length">
+				<span>
+					{{ iconesFiltrados.length }}
+					ícone(s) encontrado(s)
+				</span>
+
+				<span *ngIf="iconesFiltrados.length > 300">
+					Mostrando os primeiros 300
+				</span>
+			</div>
+
+			<!-- GRID -->
+
+			<div class="icon-grid" *ngIf="iconesVisiveis().length">
+				<button type="button" class="icon-option" *ngFor="let iconeItem of iconesVisiveis()"
+					(click)="selecionarIcone(iconeItem)" [title]="iconeItem">
+					<span class="material-icons">
+						{{ iconeItem }}
+					</span>
+				</button>
+			</div>
+
+			<!-- NENHUM RESULTADO -->
+
+			<div class="icon-empty" *ngIf="iconesFiltrados.length === 0">
+				<span class="material-icons"> search_off </span>
+
+				<strong> Nenhum ícone encontrado </strong>
+
+				<span> Tente pesquisar por outro nome. </span>
+			</div>
+
+			<!-- ERRO AO CARREGAR -->
+
+			<div class="icon-empty" *ngIf="icones.length === 0">
+				<span class="material-icons"> error_outline </span>
+
+				<strong> Não foi possível carregar os ícones </strong>
+
+				<span>
+					Verifique se o arquivo
+					<strong>material-icons.json</strong>
+					está em
+					<strong>assets/</strong>.
+				</span>
+			</div>
+		</div>
+	</div>
 </div>

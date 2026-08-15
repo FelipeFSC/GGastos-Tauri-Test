@@ -1,7 +1,253 @@
 <div class="relatorios-page">
-  <div class="card empty">
-    <span class="material-icons">bar_chart</span>
-    <strong>Relatórios</strong>
-    <span>Em breve você vai poder gerar relatórios detalhados por aqui.</span>
-  </div>
+
+    <!-- CABEÇALHO -->
+
+    <div class="cabecalho">
+        <h2>Relatórios</h2>
+
+        <div class="navegador-periodo">
+            <button class="seta" [disabled]="!podeNavegar()" (click)="navegarPeriodo(-1)">
+                <span class="material-icons">chevron_left</span>
+            </button>
+
+            <div class="periodo-wrapper">
+                <button class="rotulo-periodo" (click)="alternarSeletorPeriodo()">
+                    {{ rotuloPeriodo() }}
+                </button>
+
+                <div class="seletor-periodo" *ngIf="seletorPeriodoAberto">
+
+                    <button *ngFor="let opcao of opcoesPeriodo" class="opcao-periodo"
+                        [class.ativa]="periodoTipo === opcao.tipo" (click)="selecionarPeriodo(opcao.tipo)">
+                        {{ opcao.rotulo }}
+                    </button>
+
+                    <div class="periodo-personalizado" *ngIf="periodoTipo === 'personalizado'">
+                        <label>
+                            De
+                            <input type="date" [(ngModel)]="personalizadoInicio" />
+                        </label>
+
+                        <label>
+                            Até
+                            <input type="date" [(ngModel)]="personalizadoFim" />
+                        </label>
+
+                        <button class="btn-aplicar" (click)="aplicarPeriodoPersonalizado()">
+                            Aplicar
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <button class="seta" [disabled]="!podeNavegar()" (click)="navegarPeriodo(1)">
+                <span class="material-icons">chevron_right</span>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ABAS -->
+
+    <div class="abas">
+        <button class="aba" [class.ativa]="abaAtiva === 'categorias'" (click)="selecionarAba('categorias')">
+            Categorias
+        </button>
+        <button class="aba" [class.ativa]="abaAtiva === 'entradas-saidas'" (click)="selecionarAba('entradas-saidas')">
+            Entradas x Saídas
+        </button>
+        <button class="aba" [class.ativa]="abaAtiva === 'contas'" (click)="selecionarAba('contas')">
+            Contas
+        </button>
+        <button class="aba" [class.ativa]="abaAtiva === 'tags'" (click)="selecionarAba('tags')">
+            Tags
+        </button>
+    </div>
+
+
+    <!-- ABA: CATEGORIAS -->
+
+    <div class="conteudo-aba" *ngIf="abaAtiva === 'categorias'">
+
+        <div class="barra-acoes">
+            <div class="titulo-secao">
+                <h3>Categorias</h3>
+
+                <button class="btn-filtros" title="Em breve" disabled>
+                    <span class="material-icons">apps</span>
+                    Filtros
+                </button>
+            </div>
+
+            <div class="acoes-direita">
+                <button class="btn-icone ativo" title="Distribuição por categoria">
+                    <span class="material-icons">donut_small</span>
+                </button>
+                <button class="btn-icone" title="Em breve" disabled>
+                    <span class="material-icons">show_chart</span>
+                </button>
+                <button class="btn-icone" title="Em breve" disabled>
+                    <span class="material-icons">print</span>
+                </button>
+                <button class="btn-icone" title="Em breve" disabled>
+                    <span class="material-icons">picture_as_pdf</span>
+                </button>
+            </div>
+        </div>
+
+        <p class="nota-cartao">
+            Gastos de cartão com base na <strong>data da parcela</strong>
+        </p>
+
+        <div class="carregando" *ngIf="carregando">
+            Carregando...
+        </div>
+
+        <ng-container *ngIf="!carregando">
+
+            <!-- DESPESAS -->
+
+            <div class="bloco-relatorio">
+
+                <div class="lista-categorias">
+                    <h4>Despesas</h4>
+
+                    <p class="vazio" *ngIf="despesas.length === 0">
+                        Nenhuma despesa nesse período.
+                    </p>
+
+                    <ng-container *ngFor="let linha of despesas">
+
+                        <button class="linha-categoria" (click)="alternarExpansao(linha)">
+                            <span class="circulo" [style.background]="linha.cor">
+                                <span class="material-icons">{{ linha.icone || "category" }}</span>
+                            </span>
+
+                            <span class="nome">{{ linha.nome }}</span>
+
+                            <span class="valores">
+                                <strong>{{ formatarMoeda(linha.valor) }}</strong>
+                                <small>{{ formatarPercentual(linha.percentual) }}</small>
+                            </span>
+                        </button>
+
+                        <div class="detalhe-categoria" *ngIf="linha.expandida">
+
+                            <ng-container *ngIf="!linha.misturado">
+                                <div class="transacao" *ngFor="let t of linha.transacoesDiretas">
+                                    <span>{{ t.descricao }}</span>
+                                    <span>{{ formatarMoeda(t.valor) }}</span>
+                                </div>
+                            </ng-container>
+
+                            <ng-container *ngIf="linha.misturado">
+                                <div class="agrupamento" *ngFor="let g of linha.agrupamentos">
+
+                                    <div class="agrupamento-cabecalho">
+                                        <span>{{ g.rotulo }}</span>
+                                        <strong>{{ formatarMoeda(g.valor) }}</strong>
+                                    </div>
+
+                                    <div class="transacao" *ngFor="let t of g.transacoes">
+                                        <span>{{ t.descricao }}</span>
+                                        <span>{{ formatarMoeda(t.valor) }}</span>
+                                    </div>
+
+                                </div>
+                            </ng-container>
+
+                        </div>
+
+                    </ng-container>
+
+                    <div class="linha-total" *ngIf="despesas.length">
+                        <span>Total</span>
+                        <strong>{{ formatarMoeda(totalDespesas) }}</strong>
+                    </div>
+                </div>
+
+                <div class="grafico" #graficoDespesas></div>
+
+            </div>
+
+
+            <!-- RECEITAS -->
+
+            <div class="bloco-relatorio">
+
+                <div class="lista-categorias">
+                    <h4>Receitas</h4>
+
+                    <p class="vazio" *ngIf="receitas.length === 0">
+                        Nenhuma receita nesse período.
+                    </p>
+
+                    <ng-container *ngFor="let linha of receitas">
+
+                        <button class="linha-categoria" (click)="alternarExpansao(linha)">
+                            <span class="circulo" [style.background]="linha.cor">
+                                <span class="material-icons">{{ linha.icone || "category" }}</span>
+                            </span>
+
+                            <span class="nome">{{ linha.nome }}</span>
+
+                            <span class="valores">
+                                <strong>{{ formatarMoeda(linha.valor) }}</strong>
+                                <small>{{ formatarPercentual(linha.percentual) }}</small>
+                            </span>
+                        </button>
+
+                        <div class="detalhe-categoria" *ngIf="linha.expandida">
+
+                            <ng-container *ngIf="!linha.misturado">
+                                <div class="transacao" *ngFor="let t of linha.transacoesDiretas">
+                                    <span>{{ t.descricao }}</span>
+                                    <span>{{ formatarMoeda(t.valor) }}</span>
+                                </div>
+                            </ng-container>
+
+                            <ng-container *ngIf="linha.misturado">
+                                <div class="agrupamento" *ngFor="let g of linha.agrupamentos">
+
+                                    <div class="agrupamento-cabecalho">
+                                        <span>{{ g.rotulo }}</span>
+                                        <strong>{{ formatarMoeda(g.valor) }}</strong>
+                                    </div>
+
+                                    <div class="transacao" *ngFor="let t of g.transacoes">
+                                        <span>{{ t.descricao }}</span>
+                                        <span>{{ formatarMoeda(t.valor) }}</span>
+                                    </div>
+
+                                </div>
+                            </ng-container>
+
+                        </div>
+
+                    </ng-container>
+
+                    <div class="linha-total" *ngIf="receitas.length">
+                        <span>Total</span>
+                        <strong>{{ formatarMoeda(totalReceitas) }}</strong>
+                    </div>
+                </div>
+
+                <div class="grafico" #graficoReceitas></div>
+
+            </div>
+
+        </ng-container>
+
+    </div>
+
+
+    <!-- OUTRAS ABAS: ainda não implementadas nessa primeira versão -->
+
+    <div class="conteudo-aba placeholder" *ngIf="abaAtiva !== 'categorias'">
+        <span class="material-icons">construction</span>
+        <strong>Esse relatório ainda não foi implementado</strong>
+        <span>Em breve!</span>
+    </div>
+
 </div>
