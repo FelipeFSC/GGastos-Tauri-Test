@@ -58,6 +58,13 @@ interface Agrupamento {
 	transacoes: Transacao[];
 }
 
+interface MesResumo {
+	mes: number;
+	receitas: number;
+	despesas: number;
+	saldo: number;
+}
+
 interface LinhaCategoria {
 	categoriaId: string;
 	nome: string;
@@ -83,6 +90,20 @@ const PALETA_PADRAO = [
 	"#f87171",
 	"#2dd4bf",
 ];
+
+const NOMES_MES_ABREV = [
+	"Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+	"Jul", "Ago", "Set", "Out", "Nov", "Dez",
+];
+
+const NOMES_MES_COMPLETO = [
+	"Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+	"Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+/** Verde/vermelho já usados em todo o app pra receita/despesa (ex.: lancamentos.component.css). */
+const COR_RECEITA = "#3c7a3c";
+const COR_DESPESA = "#d93025";
 
 const OPCOES_PERIODO: { tipo: TipoPeriodo; rotulo: string }[] = [
 	{ tipo: "hoje", rotulo: "Hoje" },
@@ -110,6 +131,12 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 	@ViewChild("graficoReceitas")
 	graficoReceitasRef?: ElementRef<HTMLDivElement>;
 
+	@ViewChild("graficoComparativo")
+	graficoComparativoRef?: ElementRef<HTMLDivElement>;
+
+	@ViewChild("graficoAcumulado")
+	graficoAcumuladoRef?: ElementRef<HTMLDivElement>;
+
 	opcoesPeriodo = OPCOES_PERIODO;
 
 	abaAtiva: Aba = "categorias";
@@ -127,35 +154,63 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 	totalDespesas = 0;
 	totalReceitas = 0;
 
+	// =========================================================
+	// EVOLUÇÃO ANUAL (aba "Entradas x Saídas")
+	// =========================================================
+
+	anoEvolucao = new Date().getFullYear();
+	carregandoEvolucao = false;
+
+	/** Os 12 meses do ano, sempre — meses sem lançamento entram com 0. */
+	resumoMensal: MesResumo[] = [];
+	/** Só os meses com alguma movimentação — é o que vira linha da tabela. */
+	mesesComDados: MesResumo[] = [];
+	saldoAcumuladoSerie: number[] = [];
+
+	totalReceitasAno = 0;
+	totalDespesasAno = 0;
+	saldoAno = 0;
+	melhorMes: MesResumo | null = null;
+
+	mediaReceitas = 0;
+	mediaDespesas = 0;
+	mediaSaldo = 0;
+
 	private categoriasPorId = new Map<string, CategoriaRow>();
 	private charts: {
 		despesas: echarts.ECharts | null;
 		receitas: echarts.ECharts | null;
-	} = { despesas: null, receitas: null };
+		comparativo: echarts.ECharts | null;
+		acumulado: echarts.ECharts | null;
+	} = { despesas: null, receitas: null, comparativo: null, acumulado: null };
 
 	constructor(private db: DatabaseService) { }
 
 	async ngOnInit(): Promise<void> {
-		await this.carregarRelatorio();
+		await Promise.all([
+			this.carregarRelatorio(),
+			this.carregarEvolucaoAnual(),
+		]);
 	}
 
 	ngAfterViewInit(): void {
-		// Os gráficos são criados/atualizados em carregarRelatorio(), depois
-		// que os dados chegam — aqui não tem nada pra fazer ainda.
+		// Os gráficos são criados/atualizados em carregarRelatorio()/
+		// carregarEvolucaoAnual(), depois que os dados chegam — aqui não tem
+		// nada pra fazer ainda.
 	}
 
 	ngOnDestroy(): void {
-		this.charts.despesas?.dispose();
-		this.charts.receitas?.dispose();
+		for (const chart of Object.values(this.charts)) {
+			chart?.dispose();
+		}
 	}
 
 	@HostListener("window:resize")
 	onResize(): void {
-		if (this.charts.despesas && !this.charts.despesas.isDisposed()) {
-			this.charts.despesas.resize();
-		}
-		if (this.charts.receitas && !this.charts.receitas.isDisposed()) {
-			this.charts.receitas.resize();
+		for (const chart of Object.values(this.charts)) {
+			if (chart && !chart.isDisposed()) {
+				chart.resize();
+			}
 		}
 	}
 
@@ -165,6 +220,12 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	selecionarAba(aba: Aba): void {
 		this.abaAtiva = aba;
+
+		// As abas ficam com display:none quando não estão ativas (pra não
+		// destruir os gráficos) — o ECharts não recalcula o próprio tamanho
+		// sozinho quando o container volta a ficar visível, então força um
+		// resize depois que o Angular aplicar a mudança de [hidden].
+		setTimeout(() => this.onResize(), 0);
 	}
 
 	// =====================================================================
@@ -588,11 +649,11 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 		let chart = this.charts[chave];
 
 		/*
-		 * O container é recriado do zero toda vez que "*ngIf=!carregando"
-		 * alterna (troca de mês, de aba etc.) — o Angular destrói a <div>
-		 * antiga e cria uma nova. Se a instância guardada ainda existir mas
+		 * Proteção defensiva: se por algum motivo a instância guardada
 		 * estiver presa a um elemento que já saiu do DOM (ou foi disposed),
 		 * ela precisa ser descartada e recriada em cima do elemento atual.
+		 * Na prática não deveria mais acontecer — os containers usam
+		 * [hidden] em vez de *ngIf, então nunca são destruídos/recriados.
 		 */
 		if (chart && (chart.isDisposed() || chart.getDom() !== elemento)) {
 			chart.dispose();
@@ -622,6 +683,239 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 						value: Number(l.valor.toFixed(2)),
 						itemStyle: { color: l.cor },
 					})),
+				},
+			],
+		});
+
+		chart.resize();
+	}
+
+	// =====================================================================
+	// EVOLUÇÃO ANUAL (aba "Entradas x Saídas")
+	// =====================================================================
+
+	anoEvolucaoAnterior(): void {
+		this.anoEvolucao--;
+		this.carregarEvolucaoAnual();
+	}
+
+	anoEvolucaoProximo(): void {
+		this.anoEvolucao++;
+		this.carregarEvolucaoAnual();
+	}
+
+	async carregarEvolucaoAnual(): Promise<void> {
+		this.carregandoEvolucao = true;
+
+		const inicio = `${this.anoEvolucao}-01-01`;
+		const fim = `${this.anoEvolucao}-12-31`;
+
+		const linhas = await this.db.query<{ mes: string; tipo: string; total: number }>(
+			`SELECT substr(data, 6, 2) as mes, tipo, SUM(valor) as total
+       FROM lancamentos
+       WHERE usuario_id = ? AND data >= ? AND data <= ?
+       GROUP BY mes, tipo`,
+			[USUARIO_LOCAL_ID, inicio, fim],
+		);
+
+		const resumo: MesResumo[] = Array.from({ length: 12 }, (_, i) => ({
+			mes: i + 1,
+			receitas: 0,
+			despesas: 0,
+			saldo: 0,
+		}));
+
+		for (const linha of linhas) {
+			const indice = Number(linha.mes) - 1;
+
+			if (indice < 0 || indice > 11) {
+				continue;
+			}
+
+			if (linha.tipo === "receita") {
+				resumo[indice].receitas = Number(linha.total);
+			} else if (linha.tipo === "despesa") {
+				resumo[indice].despesas = Number(linha.total);
+			}
+		}
+
+		for (const item of resumo) {
+			item.saldo = item.receitas - item.despesas;
+		}
+
+		this.resumoMensal = resumo;
+		this.mesesComDados = resumo.filter((m) => m.receitas > 0 || m.despesas > 0);
+
+		let acumulado = 0;
+		this.saldoAcumuladoSerie = resumo.map((m) => {
+			acumulado += m.saldo;
+			return acumulado;
+		});
+
+		this.totalReceitasAno = resumo.reduce((soma, m) => soma + m.receitas, 0);
+		this.totalDespesasAno = resumo.reduce((soma, m) => soma + m.despesas, 0);
+		this.saldoAno = this.totalReceitasAno - this.totalDespesasAno;
+
+		this.melhorMes = this.mesesComDados.length
+			? this.mesesComDados.reduce((melhor, atual) =>
+				atual.saldo > melhor.saldo ? atual : melhor,
+			)
+			: null;
+
+		const qtd = this.mesesComDados.length || 1;
+		this.mediaReceitas =
+			this.mesesComDados.reduce((soma, m) => soma + m.receitas, 0) / qtd;
+		this.mediaDespesas =
+			this.mesesComDados.reduce((soma, m) => soma + m.despesas, 0) / qtd;
+		this.mediaSaldo =
+			this.mesesComDados.reduce((soma, m) => soma + m.saldo, 0) / qtd;
+
+		this.carregandoEvolucao = false;
+
+		// Mesma razão do setTimeout em carregarRelatorio(): os containers só
+		// existem no DOM depois que o Angular termina de re-renderizar.
+		setTimeout(() => this.renderizarGraficosEvolucao(), 0);
+	}
+
+	nomeMesAbrev(mes: number): string {
+		return NOMES_MES_ABREV[mes - 1];
+	}
+
+	nomeMesCompleto(mes: number): string {
+		return NOMES_MES_COMPLETO[mes - 1];
+	}
+
+	rotuloPeriodoEvolucao(): string {
+		if (!this.mesesComDados.length) {
+			return `${this.anoEvolucao}`;
+		}
+
+		const primeiro = this.mesesComDados[0].mes;
+		const ultimo = this.mesesComDados[this.mesesComDados.length - 1].mes;
+
+		return primeiro === ultimo
+			? `${this.anoEvolucao} · ${this.nomeMesCompleto(primeiro)}`
+			: `${this.anoEvolucao} · ${this.nomeMesCompleto(primeiro)}–${this.nomeMesCompleto(ultimo)}`;
+	}
+
+	statusSaldo(saldo: number): "superavit" | "deficit" | "equilibrado" {
+		if (saldo > 0) return "superavit";
+		if (saldo < 0) return "deficit";
+		return "equilibrado";
+	}
+
+	rotuloStatus(saldo: number): string {
+		switch (this.statusSaldo(saldo)) {
+			case "superavit":
+				return "Superávit";
+			case "deficit":
+				return "Déficit";
+			default:
+				return "Equilibrado";
+		}
+	}
+
+	private renderizarGraficosEvolucao(): void {
+		this.renderizarComparativo(this.graficoComparativoRef?.nativeElement);
+		this.renderizarAcumulado(this.graficoAcumuladoRef?.nativeElement);
+	}
+
+	private renderizarComparativo(elemento: HTMLDivElement | undefined): void {
+		if (!elemento) {
+			return;
+		}
+
+		let chart = this.charts.comparativo;
+
+		if (chart && (chart.isDisposed() || chart.getDom() !== elemento)) {
+			chart.dispose();
+			chart = null;
+		}
+
+		if (!chart) {
+			chart = echarts.init(elemento);
+			this.charts.comparativo = chart;
+		}
+
+		chart.setOption({
+			tooltip: { trigger: "axis" },
+			legend: { data: ["Receitas", "Despesas"], bottom: 0 },
+			grid: { left: 48, right: 16, top: 24, bottom: 40 },
+			xAxis: {
+				type: "category",
+				data: NOMES_MES_ABREV,
+				boundaryGap: false,
+			},
+			yAxis: {
+				type: "value",
+				axisLabel: { formatter: (v: number) => `R$ ${v / 1000}k` },
+			},
+			series: [
+				{
+					name: "Receitas",
+					type: "line",
+					data: this.resumoMensal.map((m) => Number(m.receitas.toFixed(2))),
+					color: COR_RECEITA,
+					symbolSize: 7,
+					lineStyle: { width: 2 },
+				},
+				{
+					name: "Despesas",
+					type: "line",
+					data: this.resumoMensal.map((m) => Number(m.despesas.toFixed(2))),
+					color: COR_DESPESA,
+					symbolSize: 7,
+					lineStyle: { width: 2 },
+				},
+			],
+		});
+
+		chart.resize();
+	}
+
+	private renderizarAcumulado(elemento: HTMLDivElement | undefined): void {
+		if (!elemento) {
+			return;
+		}
+
+		let chart = this.charts.acumulado;
+
+		if (chart && (chart.isDisposed() || chart.getDom() !== elemento)) {
+			chart.dispose();
+			chart = null;
+		}
+
+		if (!chart) {
+			chart = echarts.init(elemento);
+			this.charts.acumulado = chart;
+		}
+
+		chart.setOption({
+			tooltip: { trigger: "axis" },
+			grid: { left: 48, right: 16, top: 24, bottom: 24 },
+			xAxis: {
+				type: "category",
+				data: NOMES_MES_ABREV,
+				boundaryGap: false,
+			},
+			yAxis: {
+				type: "value",
+				axisLabel: { formatter: (v: number) => `R$ ${v / 1000}k` },
+			},
+			series: [
+				{
+					name: "Saldo acumulado",
+					type: "line",
+					data: this.saldoAcumuladoSerie.map((v) => Number(v.toFixed(2))),
+					color: COR_RECEITA,
+					symbolSize: 7,
+					lineStyle: { width: 2 },
+					areaStyle: {
+						color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+							{ offset: 0, color: "rgba(60, 122, 60, 0.35)" },
+							{ offset: 1, color: "rgba(60, 122, 60, 0.02)" },
+						]),
+					},
 				},
 			],
 		});

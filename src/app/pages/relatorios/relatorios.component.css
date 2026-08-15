@@ -149,6 +149,14 @@
 
 
 /* ================================================= */
+/* CONTEÚDO DA ABA */
+/* ================================================= */
+
+.conteudo-aba {
+  position: relative;
+}
+
+/* ================================================= */
 /* ABAS */
 /* ================================================= */
 
@@ -263,7 +271,17 @@
 /* ================================================= */
 
 .carregando {
-  padding: 40px;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(1px);
+
   text-align: center;
   color: #9ca3af;
   font-size: 14px;
@@ -424,6 +442,216 @@
 
 
 /* ================================================= */
+/* EVOLUÇÃO ANUAL (aba Entradas x Saídas) */
+/* ================================================= */
+
+.positivo {
+  color: #3c7a3c;
+}
+
+.negativo {
+  color: #d93025;
+}
+
+.cabecalho-evolucao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.cabecalho-evolucao h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.cabecalho-evolucao p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.navegador-ano {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+
+  height: 34px;
+  padding: 0 4px;
+
+  border: 1px solid #e2e5ea;
+  border-radius: 8px;
+}
+
+.navegador-ano strong {
+  min-width: 40px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.cards-evolucao {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card-evolucao {
+  background: #fff;
+  border: 1px solid #e7e9ee;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  padding: 18px 20px;
+
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.icone-card {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icone-card .material-icons {
+  font-size: 18px;
+}
+
+.icone-card.receita {
+  background: #eafaf0;
+  color: #3c7a3c;
+}
+
+.icone-card.despesa {
+  background: #fdecea;
+  color: #d93025;
+}
+
+.icone-card.acumulado {
+  background: #eef4ff;
+  color: #4285f4;
+}
+
+.icone-card.melhor-mes {
+  background: #f3ecfd;
+  color: #8b5cf6;
+}
+
+.rotulo-card {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.valor-card {
+  display: block;
+  font-size: 19px;
+  font-weight: 700;
+  color: #202124;
+}
+
+.card-evolucao small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.bloco-cheio {
+  display: block;
+}
+
+.cabecalho-bloco {
+  margin-bottom: 12px;
+}
+
+.cabecalho-bloco h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #202124;
+}
+
+.cabecalho-bloco p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.grafico-linha,
+.grafico-area {
+  width: 100%;
+  height: 260px;
+}
+
+.tabela-resumo-wrap {
+  overflow-x: auto;
+}
+
+.tabela-resumo {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-resumo th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9ca3af;
+  border-bottom: 1px solid #e7e9ee;
+  white-space: nowrap;
+}
+
+.tabela-resumo td {
+  padding: 12px;
+  font-size: 13px;
+  color: #374151;
+  border-bottom: 1px solid #f1f3f5;
+  white-space: nowrap;
+}
+
+.tabela-resumo tfoot td {
+  border-bottom: none;
+  border-top: 1px solid #e7e9ee;
+  padding-top: 14px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-badge.superavit {
+  background: #eafaf0;
+  color: #3c7a3c;
+}
+
+.status-badge.deficit {
+  background: #fdecea;
+  color: #d93025;
+}
+
+.status-badge.equilibrado {
+  background: #f1f2f4;
+  color: #6b7280;
+}
+
+
+/* ================================================= */
 /* PLACEHOLDER (outras abas) */
 /* ================================================= */
 
@@ -466,6 +694,10 @@
   .grafico {
     height: 200px;
   }
+
+  .cards-evolucao {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
@@ -477,5 +709,20 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .cabecalho-evolucao {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .cards-evolucao {
+    grid-template-columns: 1fr;
+  }
+
+  .grafico-linha,
+  .grafico-area {
+    height: 220px;
   }
 }

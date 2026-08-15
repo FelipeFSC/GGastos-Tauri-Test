@@ -68,7 +68,7 @@
 
     <!-- ABA: CATEGORIAS -->
 
-    <div class="conteudo-aba" *ngIf="abaAtiva === 'categorias'">
+    <div class="conteudo-aba" [hidden]="abaAtiva !== 'categorias'">
 
         <div class="barra-acoes">
             <div class="titulo-secao">
@@ -104,11 +104,9 @@
             Carregando...
         </div>
 
-        <ng-container *ngIf="!carregando">
+        <!-- DESPESAS -->
 
-            <!-- DESPESAS -->
-
-            <div class="bloco-relatorio">
+        <div class="bloco-relatorio">
 
                 <div class="lista-categorias">
                     <h4>Despesas</h4>
@@ -237,14 +235,171 @@
 
             </div>
 
-        </ng-container>
+    </div>
+
+
+    <!-- ABA: ENTRADAS X SAÍDAS (Evolução Anual) -->
+
+    <div class="conteudo-aba" [hidden]="abaAtiva !== 'entradas-saidas'">
+
+        <div class="cabecalho-evolucao">
+            <div>
+                <h3>Evolução Anual</h3>
+                <p>{{ rotuloPeriodoEvolucao() }} · Acumulado e tendências</p>
+            </div>
+
+            <div class="acoes-direita">
+                <div class="navegador-ano">
+                    <button class="seta" (click)="anoEvolucaoAnterior()">
+                        <span class="material-icons">chevron_left</span>
+                    </button>
+
+                    <strong>{{ anoEvolucao }}</strong>
+
+                    <button class="seta" (click)="anoEvolucaoProximo()">
+                        <span class="material-icons">chevron_right</span>
+                    </button>
+                </div>
+
+                <button class="btn-filtros" title="Em breve" disabled>
+                    <span class="material-icons">file_download</span>
+                    Exportar
+                </button>
+            </div>
+        </div>
+
+        <div class="carregando" *ngIf="carregandoEvolucao">
+            Carregando...
+        </div>
+
+        <!-- CARDS -->
+
+        <div class="cards-evolucao">
+            <div class="card-evolucao">
+                <span class="icone-card receita">
+                    <span class="material-icons">trending_up</span>
+                </span>
+                <div>
+                    <span class="rotulo-card">Receitas {{ anoEvolucao }}</span>
+                    <strong class="valor-card positivo">R$ {{ formatarMoeda(totalReceitasAno) }}</strong>
+                </div>
+            </div>
+
+            <div class="card-evolucao">
+                <span class="icone-card despesa">
+                    <span class="material-icons">trending_down</span>
+                </span>
+                <div>
+                    <span class="rotulo-card">Despesas {{ anoEvolucao }}</span>
+                    <strong class="valor-card negativo">R$ {{ formatarMoeda(totalDespesasAno) }}</strong>
+                </div>
+            </div>
+
+            <div class="card-evolucao">
+                <span class="icone-card acumulado">
+                    <span class="material-icons">account_balance_wallet</span>
+                </span>
+                <div>
+                    <span class="rotulo-card">Acumulado</span>
+                    <strong class="valor-card" [class.positivo]="saldoAno >= 0" [class.negativo]="saldoAno < 0">
+                        R$ {{ formatarMoeda(saldoAno) }}
+                    </strong>
+                </div>
+            </div>
+
+            <div class="card-evolucao">
+                <span class="icone-card melhor-mes">
+                    <span class="material-icons">emoji_events</span>
+                </span>
+                <div>
+                    <span class="rotulo-card">Melhor mês</span>
+                    <strong class="valor-card">{{ melhorMes ? nomeMesAbrev(melhorMes.mes) : "-" }}</strong>
+                    <small *ngIf="melhorMes">Saldo: R$ {{ formatarMoeda(melhorMes.saldo) }}</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMPARATIVO MENSAL -->
+
+        <div class="bloco-relatorio bloco-cheio">
+            <div class="cabecalho-bloco">
+                <h4>Receitas vs Despesas Mensais</h4>
+                <p>Comparativo mensal ao longo do ano</p>
+            </div>
+
+            <div class="grafico-linha" #graficoComparativo></div>
+        </div>
+
+        <!-- SALDO ACUMULADO -->
+
+        <div class="bloco-relatorio bloco-cheio">
+            <div class="cabecalho-bloco">
+                <h4>Saldo Acumulado no Ano</h4>
+                <p>Evolução mês a mês do patrimônio acumulado</p>
+            </div>
+
+            <div class="grafico-area" #graficoAcumulado></div>
+        </div>
+
+        <!-- RESUMO POR MÊS -->
+
+        <div class="bloco-relatorio bloco-cheio">
+            <h4>Resumo por Mês</h4>
+
+            <div class="tabela-resumo-wrap">
+                <table class="tabela-resumo">
+                    <thead>
+                        <tr>
+                            <th>Mês</th>
+                            <th>Receitas</th>
+                            <th>Despesas</th>
+                            <th>Saldo</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr *ngFor="let m of mesesComDados">
+                            <td>{{ nomeMesAbrev(m.mes) }}/{{ anoEvolucao }}</td>
+                            <td class="positivo">+R$ {{ formatarMoeda(m.receitas) }}</td>
+                            <td class="negativo">-R$ {{ formatarMoeda(m.despesas) }}</td>
+                            <td [class.positivo]="m.saldo >= 0" [class.negativo]="m.saldo < 0">
+                                {{ m.saldo >= 0 ? "+" : "-" }}R$ {{ formatarMoeda(m.saldo < 0 ? -m.saldo : m.saldo) }}
+                            </td>
+                            <td>
+                                <span class="status-badge" [class]="statusSaldo(m.saldo)">
+                                    {{ rotuloStatus(m.saldo) }}
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr *ngIf="mesesComDados.length === 0">
+                            <td colspan="5" class="vazio">Nenhum lançamento em {{ anoEvolucao }}.</td>
+                        </tr>
+                    </tbody>
+
+                    <tfoot *ngIf="mesesComDados.length">
+                        <tr>
+                            <td><strong>Média</strong></td>
+                            <td class="positivo">R$ {{ formatarMoeda(mediaReceitas) }}</td>
+                            <td class="negativo">R$ {{ formatarMoeda(mediaDespesas) }}</td>
+                            <td [class.positivo]="mediaSaldo >= 0" [class.negativo]="mediaSaldo < 0">
+                                R$ {{ formatarMoeda(mediaSaldo) }}
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
 
     </div>
 
 
     <!-- OUTRAS ABAS: ainda não implementadas nessa primeira versão -->
 
-    <div class="conteudo-aba placeholder" *ngIf="abaAtiva !== 'categorias'">
+    <div class="conteudo-aba placeholder"
+        [hidden]="abaAtiva === 'categorias' || abaAtiva === 'entradas-saidas'">
         <span class="material-icons">construction</span>
         <strong>Esse relatório ainda não foi implementado</strong>
         <span>Em breve!</span>

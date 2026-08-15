@@ -150,4 +150,12 @@
 
 .container {
   min-height: calc(100% - 60px);
+
+  /*
+   * Padrão de largura do sistema inteiro: todo o conteúdo roteado passa
+   * por aqui, então centralizar e limitar a largura nesse único lugar já
+   * vale pra todas as telas, sem precisar repetir em cada página.
+   */
+  max-width: 1280px;
+  margin: 0 auto;
 }
