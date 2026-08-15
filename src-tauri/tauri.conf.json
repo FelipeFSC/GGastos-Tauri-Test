@@ -3,12 +3,14 @@
   "productName": "ggastos",
   "version": "1.0.0",
   "identifier": "com.felip.ggastos",
+
   "build": {
     "beforeDevCommand": "npm run start",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist/ggastos/browser"
   },
+
   "app": {
     "windows": [
       {
@@ -21,6 +23,7 @@
       "csp": null
     }
   },
+
   "bundle": {
     "active": true,
     "targets": "all",
