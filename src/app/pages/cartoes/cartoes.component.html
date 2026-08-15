@@ -1,487 +1,362 @@
 <div class="cartoes-page">
-
-  <div class="page-header">
-    <div>
-      <h2>Cartões de Crédito</h2>
-      <p>Gerencie seus cartões, limites e faturas.</p>
+    <div class="page-header">
+        <div>
+            <h2>Cartões de Crédito</h2>
+            <p>Gerencie seus cartões, limites e faturas.</p>
+        </div>
     </div>
-  </div>
 
-  <div class="content-grid">
-
-    <!-- NOVO / EDITAR CARTÃO -->
-    <section class="card form-card">
-
-      <div class="card-header">
-        <div class="icon-wrapper">
-          <span class="material-icons">
-            {{ editandoId ? 'edit' : 'credit_card' }}
-          </span>
-        </div>
-
-        <div>
-          <h3>
-            {{ editandoId ? 'Editar cartão' : 'Novo cartão' }}
-          </h3>
-
-          <p>
-            {{
-              editandoId
-                ? 'Altere os dados do cartão.'
-                : 'Cadastre um cartão de crédito.'
-            }}
-          </p>
-        </div>
-      </div>
-
-
-      <form
-        (submit)="editandoId ? salvarEdicao($event) : adicionar($event)"
-      >
-
-        <div class="form-group">
-          <label for="nome">Nome do cartão</label>
-
-          <input
-            id="nome"
-            [(ngModel)]="nome"
-            name="nome"
-            placeholder="Ex: Nubank, Inter..."
-            required
-          />
-        </div>
-
-
-        <div class="form-group">
-          <label for="icone">Ícone</label>
-
-          <input
-            id="icone"
-            [(ngModel)]="icone"
-            name="icone"
-            placeholder="credit_card"
-          />
-
-          <small>Nome do Material Icon</small>
-        </div>
-
-
-        <div class="form-row">
-
-          <div class="form-group">
-            <label for="cor">Cor</label>
-
-            <div class="color-input">
-              <input
-                id="cor"
-                [(ngModel)]="cor"
-                name="cor"
-                type="color"
-              />
-
-              <span>{{ cor }}</span>
-            </div>
-          </div>
-
-
-          <div class="form-group">
-            <label for="limite">Limite</label>
-
-            <input
-              id="limite"
-              [(ngModel)]="limite"
-              name="limite"
-              type="number"
-              step="0.01"
-              placeholder="0,00"
-            />
-          </div>
-
-        </div>
-
-
-        <div class="form-row">
-
-          <div class="form-group">
-            <label for="fechamento">Fechamento</label>
-
-            <div class="number-input">
-              <input
-                id="fechamento"
-                [(ngModel)]="diaFechamento"
-                name="diaFechamento"
-                type="number"
-                min="1"
-                max="31"
-                required
-              />
-
-              <span>dia</span>
-            </div>
-          </div>
-
-
-          <div class="form-group">
-            <label for="vencimento">Vencimento</label>
-
-            <div class="number-input">
-              <input
-                id="vencimento"
-                [(ngModel)]="diaVencimento"
-                name="diaVencimento"
-                type="number"
-                min="1"
-                max="31"
-                required
-              />
-
-              <span>dia</span>
-            </div>
-          </div>
-
-        </div>
-
-
-        <div class="form-group">
-          <label for="contaPagamento">
-            Conta para pagamento
-          </label>
-
-          <select
-            id="contaPagamento"
-            [(ngModel)]="contaPagamentoId"
-            name="contaPagamentoId"
-          >
-            <option value="">
-              Sem conta de pagamento padrão
-            </option>
-
-            <option
-              *ngFor="let c of contas"
-              [value]="c.id"
-            >
-              {{ c.nome }}
-            </option>
-          </select>
-        </div>
-
-
-        <button
-          class="btn-primary"
-          type="submit"
-        >
-          <span class="material-icons">
-            {{ editandoId ? 'save' : 'add' }}
-          </span>
-
-          {{ editandoId ? 'Salvar alterações' : 'Adicionar cartão' }}
-        </button>
-
-
-        <button
-          *ngIf="editandoId"
-          type="button"
-          class="btn-cancel"
-          (click)="cancelarEdicao()"
-        >
-          Cancelar edição
-        </button>
-
-      </form>
-
-    </section>
-
-
-    <!-- CARTÕES -->
-    <section class="card cards-list">
-
-      <div class="card-header">
-        <div>
-          <h3>Seus cartões</h3>
-
-          <p>
-            {{ cartoes.length }} cartão(ões) cadastrado(s)
-          </p>
-        </div>
-      </div>
-
-
-      <div
-        class="credit-card-item"
-        *ngFor="let c of cartoes"
-      >
-
-        <!-- RESUMO -->
-        <div class="card-summary">
-
-          <div
-            class="card-visual"
-            [style.background]="c.cor || '#4285f4'"
-          >
-
-            <span class="material-icons">
-              {{ c.icone || 'credit_card' }}
-            </span>
-
-            <span class="card-visual-name">
-              {{ c.nome }}
-            </span>
-
-            <span class="card-visual-number">
-              •••• •••• •••• ••••
-            </span>
-
-          </div>
-
-
-          <div class="card-info">
-
-            <div class="card-title">
-
-              <strong>
-                {{ c.nome }}
-              </strong>
-
-              <span class="limit">
-                Limite
-                <b>
-                  R$ {{ c.limite | number:'1.2-2' }}
-                </b>
-              </span>
-
-            </div>
-
-
-            <div class="card-details">
-
-              <div>
-                <span>Fechamento</span>
-                <strong>
-                  Dia {{ c.dia_fechamento }}
-                </strong>
-              </div>
-
-
-              <div>
-                <span>Vencimento</span>
-                <strong>
-                  Dia {{ c.dia_vencimento }}
-                </strong>
-              </div>
-
-
-              <div>
-                <span>Pagamento</span>
-                <strong>
-                  {{ nomeConta(c.conta_pagamento_id) }}
-                </strong>
-              </div>
-
-            </div>
-
-          </div>
-
-
-          <!-- AÇÕES -->
-          <div class="card-actions">
-
-            <button
-              class="btn-edit"
-              (click)="iniciarEdicao(c)"
-              title="Editar cartão"
-            >
-              <span class="material-icons">
-                edit
-              </span>
-            </button>
-
-
-            <button
-              class="btn-invoices"
-              (click)="toggleFaturas(c.id)"
-            >
-              <span class="material-icons">
-                receipt_long
-              </span>
-
-              {{
-                cartaoExpandido === c.id
-                  ? 'Ocultar faturas'
-                  : 'Ver faturas'
-              }}
-            </button>
-
-
-            <button
-              class="btn-delete"
-              (click)="remover(c.id)"
-              title="Excluir cartão"
-            >
-              <span class="material-icons">
-                delete
-              </span>
-            </button>
-
-          </div>
-
-        </div>
-
-
-        <!-- FATURAS -->
-        <div
-          class="invoices"
-          *ngIf="cartaoExpandido === c.id"
-        >
-
-          <div class="invoices-header">
-
-            <div>
-              <h4>Faturas</h4>
-
-              <p>
-                Histórico de faturas do {{ c.nome }}
-              </p>
-            </div>
-
-          </div>
-
-
-          <!-- SEM FATURAS -->
-          <div
-            class="empty-invoices"
-            *ngIf="
-              !faturasPorCartao[c.id] ||
-              faturasPorCartao[c.id].length === 0
-            "
-          >
-
-            <span class="material-icons">
-              receipt_long
-            </span>
-
-            <strong>
-              Nenhuma fatura ainda
-            </strong>
-
-            <p>
-              As faturas serão criadas automaticamente
-              quando você lançar uma compra no cartão.
-            </p>
-
-          </div>
-
-
-          <!-- LISTA DE FATURAS -->
-          <div
-            class="invoice-list"
-            *ngIf="faturasPorCartao[c.id]?.length"
-          >
-
-            <div
-              class="invoice"
-              *ngFor="let f of faturasPorCartao[c.id]"
-            >
-
-              <div class="invoice-main">
-
-                <div class="invoice-month">
-                  <span>Referência</span>
-
-                  <strong>
-                    {{ f.mes_referencia }}/{{ f.ano_referencia }}
-                  </strong>
+    <div class="content-grid">
+        <!-- NOVO / EDITAR CARTÃO -->
+        <section class="card form-card">
+            <div class="card-header">
+                <div class="icon-wrapper">
+                    <span class="material-icons">
+                        {{ editandoId ? "edit" : "credit_card" }}
+                    </span>
                 </div>
-
 
                 <div>
-                  <span>Fechamento</span>
+                    <h3>
+                        {{ editandoId ? "Editar cartão" : "Novo cartão" }}
+                    </h3>
 
-                  <strong>
-                    {{ f.data_fechamento }}
-                  </strong>
+                    <p>
+                        {{
+                        editandoId
+                        ? "Altere os dados do cartão."
+                        : "Cadastre um cartão de crédito."
+                        }}
+                    </p>
+                </div>
+            </div>
+
+            <form (submit)="editandoId ? salvarEdicao($event) : adicionar($event)">
+                <div class="form-group">
+                    <label for="nome">Nome do cartão</label>
+
+                    <input id="nome" [(ngModel)]="nome" name="nome" placeholder="Ex: Nubank, Inter..." required />
                 </div>
 
+                <div class="form-group">
+                    <label for="icone">Ícone</label>
 
+                    <input id="icone" [(ngModel)]="icone" name="icone" placeholder="credit_card" />
+
+                    <small>Nome do Material Icon</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cor">Cor</label>
+
+                        <div class="color-input">
+                            <input id="cor" [(ngModel)]="cor" name="cor" type="color" />
+
+                            <span>{{ cor }}</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="limite">Limite</label>
+
+                        <input id="limite" [(ngModel)]="limite" name="limite" type="number" step="0.01"
+                            placeholder="0,00" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fechamento">Fechamento</label>
+
+                        <div class="number-input">
+                            <input id="fechamento" [(ngModel)]="diaFechamento" name="diaFechamento" type="number"
+                                min="1" max="31" required />
+
+                            <span>dia</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vencimento">Vencimento</label>
+
+                        <div class="number-input">
+                            <input id="vencimento" [(ngModel)]="diaVencimento" name="diaVencimento" type="number"
+                                min="1" max="31" required />
+
+                            <span>dia</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="contaPagamento"> Conta para pagamento </label>
+
+                    <select id="contaPagamento" [(ngModel)]="contaPagamentoId" name="contaPagamentoId">
+                        <option value="">Sem conta de pagamento padrão</option>
+
+                        <option *ngFor="let c of contas" [value]="c.id">
+                            {{ c.nome }}
+                        </option>
+                    </select>
+                </div>
+
+                <button class="btn-primary" type="submit">
+                    <span class="material-icons">
+                        {{ editandoId ? "save" : "add" }}
+                    </span>
+
+                    {{ editandoId ? "Salvar alterações" : "Adicionar cartão" }}
+                </button>
+
+                <button *ngIf="editandoId" type="button" class="btn-cancel" (click)="cancelarEdicao()">
+                    Cancelar edição
+                </button>
+            </form>
+        </section>
+
+        <!-- CARTÕES -->
+        <section class="card cards-list">
+            <div class="card-header">
                 <div>
-                  <span>Vencimento</span>
+                    <h3>Seus cartões</h3>
 
-                  <strong>
-                    {{ f.data_vencimento }}
-                  </strong>
+                    <p>{{ cartoes.length }} cartão(ões) cadastrado(s)</p>
+                </div>
+            </div>
+
+            <div class="credit-card-item" *ngFor="let c of cartoes">
+                <!-- RESUMO -->
+                <div class="card-summary">
+                    <div class="card-visual" [style.background]="c.cor || '#4285f4'">
+                        <span class="material-icons">
+                            {{ c.icone || "credit_card" }}
+                        </span>
+
+                        <span class="card-visual-name">
+                            {{ c.nome }}
+                        </span>
+
+                        <span class="card-visual-number"> •••• •••• •••• •••• </span>
+                    </div>
+
+                    <div class="card-info">
+                        <div class="card-title">
+                            <strong>
+                                {{ c.nome }}
+                            </strong>
+
+                            <span class="limit">
+                                Limite
+                                <b> R$ {{ c.limite | number: "1.2-2" }} </b>
+                            </span>
+                        </div>
+
+                        <div class="card-details">
+                            <div>
+                                <span>Fechamento</span>
+                                <strong> Dia {{ c.dia_fechamento }} </strong>
+                            </div>
+
+                            <div>
+                                <span>Vencimento</span>
+                                <strong> Dia {{ c.dia_vencimento }} </strong>
+                            </div>
+
+                            <div>
+                                <span>Pagamento</span>
+                                <strong>
+                                    {{ nomeConta(c.conta_pagamento_id) }}
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AÇÕES -->
+                    <div class="card-actions">
+                        <button class="btn-edit" (click)="iniciarEdicao(c)" title="Editar cartão">
+                            <span class="material-icons"> edit </span>
+                        </button>
+
+                        <button class="btn-invoices" (click)="toggleFaturas(c.id)">
+                            <span class="material-icons"> receipt_long </span>
+
+                            {{ cartaoExpandido === c.id ? "Ocultar faturas" : "Ver faturas" }}
+                        </button>
+
+                        <button class="btn-delete" (click)="remover(c.id)" title="Excluir cartão">
+                            <span class="material-icons"> delete </span>
+                        </button>
+                    </div>
                 </div>
 
+                <!-- FATURAS -->
+                <div class="invoices" *ngIf="cartaoExpandido === c.id">
+                    <div class="invoices-header">
+                        <div>
+                            <h4>Faturas</h4>
 
+                            <p>Histórico de faturas do {{ c.nome }}</p>
+                        </div>
+                    </div>
+
+                    <!-- SEM FATURAS -->
+                    <div class="empty-invoices" *ngIf="
+              !faturasPorCartao[c.id] || faturasPorCartao[c.id].length === 0
+            ">
+                        <span class="material-icons"> receipt_long </span>
+
+                        <strong> Nenhuma fatura ainda </strong>
+
+                        <p>
+                            As faturas serão criadas automaticamente quando você lançar uma
+                            compra no cartão.
+                        </p>
+                    </div>
+
+                    <!-- LISTA DE FATURAS -->
+                    <div class="invoice-list" *ngIf="faturasPorCartao[c.id]?.length">
+                        <div class="invoice" *ngFor="let f of faturasPorCartao[c.id]">
+                            <div class="invoice-main">
+                                <div class="invoice-month">
+                                    <span>Referência</span>
+
+                                    <strong>
+                                        {{ f.mes_referencia }}/{{ f.ano_referencia }}
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>Fechamento</span>
+
+                                    <strong>
+                                        {{ f.data_fechamento }}
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>Vencimento</span>
+
+                                    <strong>
+                                        {{ f.data_vencimento }}
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>Total</span>
+
+                                    <strong> R$ {{ f.total | number: "1.2-2" }} </strong>
+                                </div>
+
+                                <div>
+                                    <span>Status</span>
+
+                                    <span class="status" [class.status-paid]="f.status === 'paga'">
+                                        {{ f.status === "paga" ? "Paga" : "Em aberto" }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- PAGAR -->
+                            <button *ngIf="f.status !== 'paga'" class="btn-pay" (click)="pagar(f.id, c.id)">
+                                <span class="material-icons"> check </span>
+
+                                Marcar como paga
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEM CARTÕES -->
+            <div class="empty" *ngIf="cartoes.length === 0">
+                <span class="material-icons"> credit_card </span>
+
+                <strong> Nenhum cartão cadastrado </strong>
+
+                <span> Adicione seu primeiro cartão ao lado. </span>
+            </div>
+        </section>
+    </div>
+
+    <div class="icon-modal-overlay" *ngIf="iconeModalAberto" (click)="fecharSeletorIcone()">
+        <div class="icon-modal" (click)="$event.stopPropagation()">
+            <!-- HEADER -->
+
+            <div class="icon-modal-header">
                 <div>
-                  <span>Total</span>
+                    <h3>Selecionar ícone</h3>
 
-                  <strong>
-                    R$ {{ f.total | number:'1.2-2' }}
-                  </strong>
+                    <p>Escolha um ícone para sua categoria.</p>
                 </div>
 
+                <button type="button" class="icon-modal-close" (click)="fecharSeletorIcone()" title="Fechar">
+                    <span class="material-icons"> close </span>
+                </button>
+            </div>
 
-                <div>
-                  <span>Status</span>
+            <!-- BUSCA -->
 
-                  <span
-                    class="status"
-                    [class.status-paid]="f.status === 'paga'"
-                  >
-                    {{
-                      f.status === 'paga'
-                        ? 'Paga'
-                        : 'Em aberto'
-                    }}
-                  </span>
-                </div>
+            <div class="icon-search">
+                <span class="material-icons"> search </span>
 
-              </div>
+                <input [(ngModel)]="buscaIcone" name="buscaIcone" (ngModelChange)="filtrarIcones()"
+                    placeholder="Pesquisar ícone..." autocomplete="off" />
 
+                <button *ngIf="buscaIcone" type="button" class="icon-search-clear"
+                    (click)="buscaIcone = ''; filtrarIcones()" title="Limpar busca">
+                    <span class="material-icons"> close </span>
+                </button>
+            </div>
 
-              <!-- PAGAR -->
-              <button
-                *ngIf="f.status !== 'paga'"
-                class="btn-pay"
-                (click)="pagar(f.id, c.id)"
-              >
-                <span class="material-icons">
-                  check
+            <!-- INFORMAÇÃO -->
+
+            <div class="icon-results-info" *ngIf="iconesFiltrados.length">
+                <span>
+                    {{ iconesFiltrados.length }}
+                    ícone(s) encontrado(s)
                 </span>
 
-                Marcar como paga
-              </button>
-
+                <span *ngIf="iconesFiltrados.length > 300">
+                    Mostrando os primeiros 300
+                </span>
             </div>
 
-          </div>
+            <!-- GRID -->
 
+            <div class="icon-grid" *ngIf="iconesVisiveis().length">
+                <button type="button" class="icon-option" *ngFor="let iconeItem of iconesVisiveis()"
+                    (click)="selecionarIcone(iconeItem)" [title]="iconeItem">
+                    <span class="material-icons">
+                        {{ iconeItem }}
+                    </span>
+                </button>
+            </div>
+
+            <!-- NENHUM RESULTADO -->
+
+            <div class="icon-empty" *ngIf="iconesFiltrados.length === 0">
+                <span class="material-icons"> search_off </span>
+
+                <strong> Nenhum ícone encontrado </strong>
+
+                <span> Tente pesquisar por outro nome. </span>
+            </div>
+
+            <!-- ERRO AO CARREGAR -->
+
+            <div class="icon-empty" *ngIf="icones.length === 0">
+                <span class="material-icons"> error_outline </span>
+
+                <strong> Não foi possível carregar os ícones </strong>
+
+                <span>
+                    Verifique se o arquivo
+                    <strong>material-icons.json</strong>
+                    está em
+                    <strong>assets/</strong>.
+                </span>
+            </div>
         </div>
-
-      </div>
-
-
-      <!-- SEM CARTÕES -->
-      <div
-        class="empty"
-        *ngIf="cartoes.length === 0"
-      >
-
-        <span class="material-icons">
-          credit_card
-        </span>
-
-        <strong>
-          Nenhum cartão cadastrado
-        </strong>
-
-        <span>
-          Adicione seu primeiro cartão ao lado.
-        </span>
-
-      </div>
-
-    </section>
-
-  </div>
-
+    </div>
 </div>

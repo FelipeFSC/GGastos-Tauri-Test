@@ -1,5 +1,4 @@
 <div class="contas-page">
-
     <div class="page-header">
         <div>
             <h2>Contas</h2>
@@ -7,151 +6,99 @@
         </div>
     </div>
 
-
     <div class="content-grid">
-
         <!-- FORMULÁRIO -->
         <section class="card form-card">
-
             <div class="card-header">
-
                 <div class="icon-wrapper">
                     <span class="material-icons">
-                        {{ editandoId ? 'edit' : 'account_balance_wallet' }}
+                        {{ editandoId ? "edit" : "account_balance_wallet" }}
                     </span>
                 </div>
 
                 <div>
                     <h3>
-                        {{ editandoId ? 'Editar conta' : 'Nova conta' }}
+                        {{ editandoId ? "Editar conta" : "Nova conta" }}
                     </h3>
 
                     <p>
                         {{
                         editandoId
-                        ? 'Altere os dados da conta.'
-                        : 'Adicione uma conta ao sistema.'
+                        ? "Altere os dados da conta."
+                        : "Adicione uma conta ao sistema."
                         }}
                     </p>
                 </div>
-
             </div>
 
-
             <form (submit)="editandoId ? salvarEdicao($event) : adicionar($event)">
-
                 <div class="form-group">
-
-                    <label for="nome">
-                        Nome da conta
-                    </label>
+                    <label for="nome"> Nome da conta </label>
 
                     <input id="nome" [(ngModel)]="nome" name="nome" placeholder="Ex: Carteira, Nubank..." required />
-
                 </div>
 
-
                 <div class="form-group">
-
-                    <label for="icone">
-                        Ícone
-                    </label>
+                    <label for="icone"> Ícone </label>
 
                     <input id="icone" [(ngModel)]="icone" name="icone" placeholder="account_balance_wallet" />
 
-                    <small>
-                        Nome do Material Icon
-                    </small>
-
+                    <small> Nome do Material Icon </small>
                 </div>
 
-
                 <div class="form-row">
-
                     <div class="form-group">
-
-                        <label for="cor">
-                            Cor
-                        </label>
+                        <label for="cor"> Cor </label>
 
                         <div class="color-input">
-
                             <input id="cor" [(ngModel)]="cor" name="cor" type="color" />
 
                             <span>
                                 {{ cor }}
                             </span>
-
                         </div>
-
                     </div>
 
-
                     <div class="form-group">
-
-                        <label for="saldo">
-                            Saldo inicial
-                        </label>
+                        <label for="saldo"> Saldo inicial </label>
 
                         <input id="saldo" [(ngModel)]="saldoInicial" name="saldoInicial" type="number" step="0.01"
                             placeholder="0,00" />
-
                     </div>
-
                 </div>
 
-
                 <label class="checkbox">
-
                     <input [(ngModel)]="naoSomar" name="naoSomar" type="checkbox" />
 
-                    <span>
-                        Não somar no saldo geral
-                    </span>
-
+                    <span> Não somar no saldo geral </span>
                 </label>
 
-
                 <button class="btn-primary" type="submit">
-
                     <span class="material-icons">
-                        {{ editandoId ? 'save' : 'add' }}
+                        {{ editandoId ? "save" : "add" }}
                     </span>
 
-                    {{ editandoId ? 'Salvar alterações' : 'Adicionar conta' }}
-
+                    {{ editandoId ? "Salvar alterações" : "Adicionar conta" }}
                 </button>
-
 
                 <button *ngIf="editandoId" type="button" class="btn-cancel" (click)="cancelarEdicao()">
                     Cancelar edição
                 </button>
-
             </form>
-
         </section>
-
 
         <!-- LISTA -->
         <section class="card accounts-card">
-
             <div class="card-header">
-
                 <div>
                     <h3>Suas contas</h3>
 
-                    <p>
-                        {{ contas.length }} conta(s) cadastrada(s)
-                    </p>
+                    <p>{{ contas.length }} conta(s) cadastrada(s)</p>
                 </div>
-
             </div>
 
-
             <div class="table-container">
-
                 <table>
-
                     <thead>
                         <tr>
                             <th>Conta</th>
@@ -161,24 +108,17 @@
                         </tr>
                     </thead>
 
-
                     <tbody>
-
                         <tr *ngFor="let c of contas">
-
                             <td>
-
                                 <div class="account-name">
-
                                     <div class="account-icon" [style.background]="c.cor || '#4285f4'">
-                                        <span class="material-icons">
-                                            {{ c.icone || 'account_balance_wallet' }}
+                                        <span class="material-icons" style="color: white">
+                                            {{ c.icone || "account_balance_wallet" }}
                                         </span>
                                     </div>
 
-
                                     <div>
-
                                         <strong>
                                             {{ c.nome }}
                                         </strong>
@@ -186,81 +126,43 @@
                                         <span *ngIf="c.nao_somar_saldo">
                                             Não contabiliza no saldo geral
                                         </span>
-
                                     </div>
-
                                 </div>
-
                             </td>
 
-
                             <td>
-                                <strong>
-                                    R$ {{ c.saldo_inicial | number:'1.2-2' }}
-                                </strong>
+                                <strong> R$ {{ c.saldo_inicial | number: "1.2-2" }} </strong>
                             </td>
 
-
                             <td>
-
                                 <span class="status" [class.status-disabled]="c.nao_somar_saldo">
-                                    {{
-                                    c.nao_somar_saldo
-                                    ? 'Ignorado'
-                                    : 'Contabilizado'
-                                    }}
+                                    {{ c.nao_somar_saldo ? "Ignorado" : "Contabilizado" }}
                                 </span>
-
                             </td>
-
 
                             <td class="actions">
-
                                 <button class="btn-edit" (click)="iniciarEdicao(c)" title="Editar conta">
-                                    <span class="material-icons">
-                                        edit
-                                    </span>
+                                    <span class="material-icons"> edit </span>
                                 </button>
-
 
                                 <button class="btn-delete" (click)="remover(c.id)" title="Excluir conta">
-                                    <span class="material-icons">
-                                        delete
-                                    </span>
+                                    <span class="material-icons"> delete </span>
                                 </button>
-
                             </td>
-
                         </tr>
-
 
                         <tr *ngIf="contas.length === 0">
-
                             <td colspan="4" class="empty">
+                                <span class="material-icons"> account_balance_wallet </span>
 
-                                <span class="material-icons">
-                                    account_balance_wallet
-                                </span>
+                                <strong> Nenhuma conta cadastrada </strong>
 
-                                <strong>
-                                    Nenhuma conta cadastrada
-                                </strong>
-
-                                <span>
-                                    Adicione sua primeira conta ao lado.
-                                </span>
-
+                                <span> Adicione sua primeira conta ao lado. </span>
                             </td>
-
                         </tr>
-
                     </tbody>
-
                 </table>
-
             </div>
         </section>
-
     </div>
-
 </div>

@@ -123,39 +123,6 @@ export class CategoriasComponent implements OnInit {
                 throw new Error("O arquivo material-icons.json não contém um array.");
             }
 
-            /*
-             * O JSON possui várias entradas para o mesmo ícone.
-             *
-             * Exemplo:
-             *
-             * {
-             *   "name": "10k",
-             *   ...
-             *   "unsupported_families": [
-             *     "Material Icons",
-             *     ...
-             *   ]
-             * }
-             *
-             * e outra entrada:
-             *
-             * {
-             *   "name": "10k",
-             *   ...
-             *   "unsupported_families": [
-             *     "Material Symbols Outlined",
-             *     ...
-             *   ]
-             * }
-             *
-             * Como estamos usando:
-             *
-             * <span class="material-icons">
-             *
-             * queremos somente os ícones compatíveis com
-             * Material Icons.
-             */
-
             const nomes = dados
                 .filter((icone: any) => {
                     const unsupported = Array.isArray(icone.unsupported_families)
@@ -346,15 +313,15 @@ export class CategoriasComponent implements OnInit {
 
         await this.db.run(
             `INSERT INTO categorias
-        (id, usuario_id, categoria_pai_id, tipo, nome, icone, cor)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                (id, usuario_id, categoria_pai_id, tipo, nome, icone, cor)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
                 this.db.gerarId(),
                 USUARIO_LOCAL_ID,
                 categoriaPai.id,
                 categoriaPai.tipo,
                 nome,
-                null,
+                categoriaPai.icone,
                 categoriaPai.cor,
             ],
         );

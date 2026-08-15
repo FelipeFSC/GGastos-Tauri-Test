@@ -1,7 +1,10 @@
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { DatabaseService, USUARIO_LOCAL_ID } from "../../services/database.service";
+import {
+	DatabaseService,
+	USUARIO_LOCAL_ID,
+} from "../../services/database.service";
 
 interface Conta {
 	id: string;
@@ -38,7 +41,7 @@ export class ContasComponent implements OnInit {
 
 	async carregar() {
 		this.contas = await this.db.query<Conta>(
-			"SELECT * FROM contas ORDER BY nome"
+			"SELECT * FROM contas ORDER BY nome",
 		);
 	}
 
@@ -59,7 +62,7 @@ export class ContasComponent implements OnInit {
 				this.cor || null,
 				this.saldoInicial,
 				this.naoSomar ? 1 : 0,
-			]
+			],
 		);
 
 		this.limparFormulario();
@@ -101,7 +104,7 @@ export class ContasComponent implements OnInit {
 				this.saldoInicial,
 				this.naoSomar ? 1 : 0,
 				this.editandoId,
-			]
+			],
 		);
 
 		this.cancelarEdicao();
