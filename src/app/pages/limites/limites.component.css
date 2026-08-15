@@ -1,0 +1,667 @@
+.limites-page {
+  padding: 32px;
+  color: #202124;
+  background: #f7f8fa;
+  min-height: 100%;
+}
+
+
+/* HEADER */
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.page-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+
+/* MÊS */
+
+.month-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.month-current {
+  min-width: 220px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  font-size: 17px;
+  text-transform: capitalize;
+}
+
+.month-current .material-icons {
+  color: #4285f4;
+  font-size: 21px;
+}
+
+.month-button {
+  width: 38px;
+  height: 38px;
+
+  border: 1px solid #dfe3e8;
+  border-radius: 9px;
+
+  background: white;
+  color: #5f6368;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: 0.15s;
+}
+
+.month-button:hover {
+  background: #eef4ff;
+  border-color: #c9d8f5;
+  color: #4285f4;
+}
+
+
+/* AÇÕES DO MÊS */
+
+.month-actions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.btn-import {
+  height: 36px;
+
+  padding: 0 14px;
+
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+
+  background: white;
+  color: #5f6368;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  transition: 0.15s;
+}
+
+.btn-import:hover {
+  background: #f5f7fa;
+  border-color: #cbd0d7;
+  color: #4285f4;
+}
+
+.btn-import .material-icons {
+  font-size: 18px;
+}
+
+
+/* CARD */
+
+.card {
+  background: white;
+  border: 1px solid #e7e9ee;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+
+/* FORM */
+
+.form-card {
+  padding: 22px 24px;
+  margin-bottom: 24px;
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 18px;
+}
+
+.form-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.form-header p {
+  margin: 4px 0 0;
+  color: #8a9099;
+  font-size: 12px;
+}
+
+.limit-form {
+  display: grid;
+  grid-template-columns: 1fr 240px auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-group select,
+.form-group input {
+  height: 42px;
+
+  box-sizing: border-box;
+
+  padding: 0 12px;
+
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+
+  outline: none;
+
+  font-size: 13px;
+  background: white;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+  border-color: #4285f4;
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+}
+
+
+/* VALOR */
+
+.money-input {
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+
+  overflow: hidden;
+}
+
+.money-input:focus-within {
+  border-color: #4285f4;
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+}
+
+.money-input span {
+  padding-left: 12px;
+
+  color: #8a9099;
+  font-size: 13px;
+}
+
+.money-input input {
+  flex: 1;
+
+  border: none !important;
+  box-shadow: none !important;
+
+  height: 40px;
+}
+
+
+/* BOTÃO PRINCIPAL */
+
+.btn-primary {
+  height: 42px;
+
+  padding: 0 16px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #4285f4;
+  color: white;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  white-space: nowrap;
+
+  transition: 0.15s;
+}
+
+.btn-primary:hover {
+  background: #3367d6;
+}
+
+.btn-primary .material-icons {
+  font-size: 18px;
+}
+
+
+/* CANCELAR EDIÇÃO */
+
+.btn-cancel-edit {
+  height: 34px;
+
+  padding: 0 10px;
+
+  border: 1px solid #dfe3e8;
+  border-radius: 7px;
+
+  background: white;
+  color: #6b7280;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.btn-cancel-edit:hover {
+  background: #f5f6f8;
+}
+
+.btn-cancel-edit .material-icons {
+  font-size: 16px;
+}
+
+
+/* LISTA */
+
+.limits-card {
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 22px 24px;
+
+  border-bottom: 1px solid #edf0f3;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.card-header p {
+  margin: 4px 0 0;
+
+  color: #8a9099;
+  font-size: 12px;
+}
+
+
+/* LIMITE */
+
+.limits-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.limit-item {
+  padding: 20px 24px;
+
+  border-bottom: 1px solid #edf0f3;
+}
+
+.limit-item:last-child {
+  border-bottom: none;
+}
+
+
+/* TOPO DO LIMITE */
+
+.limit-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 14px;
+}
+
+.limit-category {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.category-icon {
+  width: 40px;
+  height: 40px;
+
+  border-radius: 10px;
+
+  background: #eef4ff;
+  color: #4285f4;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-icon .material-icons {
+  font-size: 21px;
+}
+
+.limit-category div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.limit-category strong {
+  font-size: 14px;
+}
+
+.limit-category span {
+  color: #8a9099;
+  font-size: 11px;
+}
+
+
+/* VALORES */
+
+.limit-values {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.limit-values strong {
+  font-size: 15px;
+}
+
+.limit-values span {
+  color: #8a9099;
+  font-size: 10px;
+}
+
+
+/* PROGRESSO */
+
+.progress-container {
+  width: 100%;
+  height: 9px;
+
+  background: #edf0f3;
+
+  border-radius: 10px;
+
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+
+  border-radius: 10px;
+
+  transition: width 0.3s ease;
+}
+
+
+/* VERDE */
+
+.progress-bar.safe {
+  background: #34a853;
+}
+
+
+/* AMARELO */
+
+.progress-bar.warning {
+  background: #fbbc04;
+}
+
+
+/* VERMELHO */
+
+.progress-bar.danger {
+  background: #ea4335;
+}
+
+
+/* RODAPÉ */
+
+.limit-bottom {
+  margin-top: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.limit-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  color: #8a9099;
+
+  font-size: 11px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+}
+
+.status-dot.safe {
+  background: #34a853;
+}
+
+.status-dot.warning {
+  background: #fbbc04;
+}
+
+.status-dot.danger {
+  background: #ea4335;
+}
+
+
+/* AÇÕES */
+
+.limit-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-edit {
+  height: 30px;
+
+  padding: 0 9px;
+
+  border: 1px solid #dfe3e8;
+  border-radius: 7px;
+
+  background: white;
+  color: #6b7280;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.btn-edit:hover {
+  background: #eef4ff;
+  border-color: #cbdaf5;
+  color: #4285f4;
+}
+
+.btn-edit .material-icons {
+  font-size: 16px;
+}
+
+.btn-delete {
+  width: 30px;
+  height: 30px;
+
+  border: none;
+  border-radius: 7px;
+
+  background: transparent;
+  color: #aeb4bc;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-delete:hover {
+  background: #fff0f0;
+  color: #d93025;
+}
+
+.btn-delete .material-icons {
+  font-size: 17px;
+}
+
+
+/* VAZIO */
+
+.empty {
+  padding: 55px 25px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  text-align: center;
+}
+
+.empty .material-icons {
+  font-size: 42px;
+  color: #c5cad3;
+
+  margin-bottom: 10px;
+}
+
+.empty strong {
+  color: #555b66;
+  font-size: 14px;
+}
+
+.empty span:last-child {
+  max-width: 430px;
+
+  margin-top: 6px;
+
+  color: #9ca3af;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+
+/* RESPONSIVO */
+
+@media (max-width: 900px) {
+
+  .limit-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .btn-primary {
+    grid-column: 1 / -1;
+  }
+
+}
+
+
+@media (max-width: 650px) {
+
+  .limites-page {
+    padding: 20px;
+  }
+
+  .month-navigation {
+    gap: 10px;
+  }
+
+  .month-current {
+    min-width: 180px;
+    font-size: 15px;
+  }
+
+  .limit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-primary {
+    grid-column: auto;
+  }
+
+  .limit-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .limit-values {
+    align-items: flex-start;
+  }
+
+  .limit-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .limit-actions {
+    width: 100%;
+  }
+
+  .btn-edit {
+    flex: 1;
+    justify-content: center;
+  }
+
+}

@@ -1,0 +1,188 @@
+<div class="visao-geral-page">
+
+  <!-- TOPO: saudação, totais do mês, acesso rápido -->
+  <div class="card top-card">
+
+    <div class="greeting-block">
+      <span class="greeting">{{ saudacao }}!</span>
+
+      <div class="mini-totals">
+        <div>
+          <span>Receitas no mês atual</span>
+          <strong class="positivo">R$ {{ receitasMes | number:'1.2-2' }}</strong>
+        </div>
+        <div>
+          <span>Despesas no mês atual</span>
+          <strong class="negativo">R$ {{ despesasMes | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-access">
+      <span class="quick-title">Acesso rápido</span>
+
+      <div class="quick-buttons">
+        <button type="button" class="quick-btn despesa" (click)="novoLancamento('despesa')">
+          <span class="material-icons">remove</span>
+          Despesa
+        </button>
+
+        <button type="button" class="quick-btn receita" (click)="novoLancamento('receita')">
+          <span class="material-icons">add</span>
+          Receita
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- SELETOR DE MÊS -->
+  <div class="period-selector">
+    <button type="button" (click)="mesAnterior()">
+      <span class="material-icons">chevron_left</span>
+    </button>
+
+    <strong>{{ nomeMes }} {{ ano }}</strong>
+
+    <button type="button" (click)="mesProximo()">
+      <span class="material-icons">chevron_right</span>
+    </button>
+  </div>
+
+
+  <div class="content-grid">
+
+    <!-- COLUNA ESQUERDA -->
+    <div class="column">
+
+      <!-- SALDO GERAL -->
+      <div class="card">
+        <div class="card-summary-header">
+          <div>
+            <span class="card-label">Saldo geral</span>
+            <strong class="card-value" [class.negativo]="saldoGeral < 0">
+              R$ {{ mostrarSaldo ? (saldoGeral | number:'1.2-2') : '••••••' }}
+            </strong>
+          </div>
+
+          <button type="button" class="btn-eye" (click)="mostrarSaldo = !mostrarSaldo">
+            <span class="material-icons">{{ mostrarSaldo ? 'visibility' : 'visibility_off' }}</span>
+          </button>
+        </div>
+
+        <h3 class="section-title">Minhas contas</h3>
+
+        <div class="list-item" *ngFor="let c of contas">
+          <div class="item-icon" [style.background]="c.cor || '#4285f4'">
+            <span class="material-icons">{{ c.icone || 'account_balance' }}</span>
+          </div>
+
+          <div class="item-info">
+            <strong>{{ c.nome }}</strong>
+            <span>Conta manual</span>
+          </div>
+
+          <strong class="item-value" [class.negativo]="c.saldo < 0" [class.positivo]="c.saldo >= 0">
+            R$ {{ c.saldo | number:'1.2-2' }}
+          </strong>
+        </div>
+
+        <p class="empty-hint" *ngIf="contas.length === 0">Nenhuma conta cadastrada.</p>
+
+        <a class="btn-manage" routerLink="/contas">Gerenciar contas</a>
+      </div>
+
+      <!-- CONTAS A PAGAR -->
+      <div class="card">
+        <h3 class="section-title">Contas a pagar</h3>
+
+        <div class="list-item" *ngFor="let l of contasAPagar">
+          <div class="item-icon" [style.background]="l.cor || '#9aa0a6'">
+            <span class="material-icons">{{ l.icone || 'receipt_long' }}</span>
+          </div>
+
+          <div class="item-info">
+            <strong>{{ l.descricao || 'Sem descrição' }}</strong>
+            <span>{{ l.data.split('-').reverse().join('/') }}</span>
+          </div>
+
+          <strong class="item-value negativo">R$ {{ l.valor | number:'1.2-2' }}</strong>
+        </div>
+
+        <p class="empty-hint" *ngIf="contasAPagar.length === 0">Nenhuma conta a pagar em aberto.</p>
+      </div>
+
+    </div>
+
+
+    <!-- COLUNA DIREITA -->
+    <div class="column">
+
+      <!-- FATURAS -->
+      <div class="card">
+        <div class="card-summary-header">
+          <div>
+            <span class="card-label">Faturas de {{ nomeMes }}</span>
+            <strong class="card-value">
+              R$ {{ mostrarFaturas ? (faturasMes | number:'1.2-2') : '••••••' }}
+            </strong>
+          </div>
+
+          <button type="button" class="btn-eye" (click)="mostrarFaturas = !mostrarFaturas">
+            <span class="material-icons">{{ mostrarFaturas ? 'visibility' : 'visibility_off' }}</span>
+          </button>
+        </div>
+
+        <h3 class="section-title">Meus cartões</h3>
+
+        <div *ngFor="let c of cartoes" class="cartao-block">
+          <div class="list-item">
+            <div class="item-icon" [style.background]="c.cor || '#4285f4'">
+              <span class="material-icons">{{ c.icone || 'credit_card' }}</span>
+            </div>
+
+            <div class="item-info">
+              <strong>{{ c.nome }}</strong>
+              <span>Cartão manual</span>
+            </div>
+          </div>
+
+          <div class="cartao-detalhe">
+            <div>
+              <span>Limite disponível</span>
+              <strong>R$ {{ c.limiteDisponivel | number:'1.2-2' }}</strong>
+            </div>
+            <div>
+              <span>Fatura atual {{ c.faturaVencimento ? '(Venc. ' + c.faturaVencimento.split('-').reverse().join('/') + ')' : '' }}</span>
+              <strong>R$ {{ c.faturaTotal | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <p class="empty-hint" *ngIf="cartoes.length === 0">Nenhum cartão cadastrado.</p>
+
+        <a class="btn-manage" routerLink="/cartoes">Gerenciar cartões</a>
+      </div>
+
+      <!-- MAIORES GASTOS -->
+      <div class="card">
+        <h3 class="section-title">Maiores gastos do mês atual</h3>
+
+        <div class="gastos-list" *ngIf="maioresGastos.length > 0">
+          <div class="gasto-item" *ngFor="let g of maioresGastos">
+            <span class="dot" [style.background]="g.cor || '#9aa0a6'"></span>
+            <span class="gasto-nome">{{ g.nome }}</span>
+            <span class="gasto-percentual">{{ g.percentual | number:'1.0-0' }}%</span>
+            <strong class="gasto-valor">R$ {{ g.total | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+
+        <p class="empty-hint" *ngIf="maioresGastos.length === 0">Nenhuma despesa neste mês.</p>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

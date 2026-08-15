@@ -1,0 +1,154 @@
+<div class="tags-page">
+
+  <!-- CABEÇALHO -->
+
+  <div class="page-header">
+    <div>
+      <h2>Tags</h2>
+      <p>Organize seus lançamentos utilizando tags.</p>
+    </div>
+  </div>
+
+
+  <div class="content-grid">
+
+    <!-- NOVA TAG -->
+
+    <section class="card form-card">
+
+      <div class="card-header">
+
+        <div class="icon-wrapper">
+          <span class="material-icons">sell</span>
+        </div>
+
+        <div>
+          <h3>Nova tag</h3>
+          <p>Adicione uma tag para seus lançamentos.</p>
+        </div>
+
+      </div>
+
+
+      <form (submit)="adicionar($event)">
+
+        <div class="form-group">
+
+          <label for="nome">
+            Nome da tag
+          </label>
+
+          <input
+            id="nome"
+            [(ngModel)]="nome"
+            name="nome"
+            placeholder="Ex: Viagem, Trabalho..."
+            required
+          />
+
+        </div>
+
+
+        <button
+          class="btn-primary"
+          type="submit"
+        >
+
+          <span class="material-icons">
+            add
+          </span>
+
+          Adicionar tag
+
+        </button>
+
+      </form>
+
+    </section>
+
+
+    <!-- LISTA DE TAGS -->
+
+    <section class="card tags-card">
+
+      <div class="card-header">
+
+        <div>
+          <h3>Suas tags</h3>
+
+          <p>
+            {{ tags.length }}
+            tag(s) cadastrada(s)
+          </p>
+        </div>
+
+      </div>
+
+
+      <div class="tag-list">
+
+        <!-- TAG -->
+
+        <div
+          class="tag-item"
+          *ngFor="let t of tags"
+        >
+
+          <div class="tag-info">
+
+            <div class="tag-icon">
+              <span class="material-icons">
+                sell
+              </span>
+            </div>
+
+            <strong>
+              {{ t.nome }}
+            </strong>
+
+          </div>
+
+
+          <button
+            class="btn-delete"
+            (click)="remover(t.id)"
+            title="Excluir tag"
+          >
+
+            <span class="material-icons">
+              delete
+            </span>
+
+          </button>
+
+        </div>
+
+
+        <!-- VAZIO -->
+
+        <div
+          class="empty"
+          *ngIf="tags.length === 0"
+        >
+
+          <span class="material-icons">
+            sell
+          </span>
+
+          <strong>
+            Nenhuma tag cadastrada
+          </strong>
+
+          <span>
+            Crie sua primeira tag ao lado.
+          </span>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+
+</div>

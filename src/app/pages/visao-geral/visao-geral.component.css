@@ -1,0 +1,334 @@
+.visao-geral-page {
+  padding: 32px;
+  color: #202124;
+  background: #f7f8fa;
+  min-height: 100%;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e7e9ee;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 24px;
+}
+
+/* TOPO */
+
+.top-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.greeting {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.mini-totals {
+  display: flex;
+  gap: 32px;
+  margin-top: 14px;
+}
+
+.mini-totals span {
+  display: block;
+  font-size: 12px;
+  color: #8a9099;
+  margin-bottom: 4px;
+}
+
+.mini-totals strong {
+  font-size: 18px;
+}
+
+.positivo {
+  color: #1e9e5a;
+}
+
+.negativo {
+  color: #e0483e;
+}
+
+.quick-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a9099;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.quick-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 84px;
+  padding: 10px 6px;
+  border: 1px solid #e7e9ee;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.quick-btn .material-icons {
+  font-size: 20px;
+}
+
+.quick-btn.despesa .material-icons {
+  color: #e0483e;
+}
+
+.quick-btn.receita .material-icons {
+  color: #1e9e5a;
+}
+
+.quick-btn:hover {
+  border-color: #4285f4;
+  background: #f7f9ff;
+}
+
+/* SELETOR DE PERÍODO */
+
+.period-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.period-selector button {
+  border: 1px solid #e7e9ee;
+  background: #fff;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #4b5563;
+}
+
+.period-selector strong {
+  min-width: 140px;
+  text-align: center;
+}
+
+/* GRID PRINCIPAL */
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* CARD SUMMARY (saldo/faturas) */
+
+.card-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.card-label {
+  display: block;
+  font-size: 13px;
+  color: #8a9099;
+  margin-bottom: 4px;
+}
+
+.card-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.btn-eye {
+  border: none;
+  background: none;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 0 0 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f1f4;
+}
+
+/* LISTA */
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.item-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.item-icon .material-icons {
+  font-size: 18px;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.item-info strong {
+  font-size: 14px;
+}
+
+.item-info span {
+  font-size: 12px;
+  color: #8a9099;
+}
+
+.item-value {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.empty-hint {
+  font-size: 13px;
+  color: #9ca3af;
+  padding: 8px 0;
+}
+
+.btn-manage {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid #e7e9ee;
+  border-radius: 8px;
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-manage:hover {
+  border-color: #4285f4;
+  color: #4285f4;
+}
+
+/* CARTÕES */
+
+.cartao-block {
+  border-bottom: 1px solid #f0f1f4;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+.cartao-block:last-of-type {
+  border-bottom: none;
+}
+
+.cartao-detalhe {
+  display: flex;
+  justify-content: space-between;
+  background: #f7f8fa;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 6px;
+}
+
+.cartao-detalhe span {
+  display: block;
+  font-size: 11px;
+  color: #8a9099;
+  margin-bottom: 2px;
+}
+
+.cartao-detalhe strong {
+  font-size: 14px;
+}
+
+/* MAIORES GASTOS */
+
+.gastos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gasto-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.gasto-nome {
+  flex: 1;
+  font-size: 13px;
+}
+
+.gasto-percentual {
+  font-size: 12px;
+  color: #8a9099;
+  width: 40px;
+  text-align: right;
+}
+
+.gasto-valor {
+  font-size: 13px;
+  width: 100px;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .top-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

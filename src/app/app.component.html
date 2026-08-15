@@ -1,0 +1,51 @@
+<header class="topbar">
+
+  <a routerLink="/visao-geral" class="brand">
+    <span class="material-icons">savings</span>
+    <span>ggastos</span>
+  </a>
+
+  <nav class="topbar-center">
+    <a routerLink="/visao-geral" routerLinkActive="active">Visão geral</a>
+    <a routerLink="/lancamentos" routerLinkActive="active">Lançamentos</a>
+    <a routerLink="/relatorios" routerLinkActive="active">Relatórios</a>
+    <a routerLink="/limites" routerLinkActive="active">Limites</a>
+  </nav>
+
+  <div class="topbar-right">
+    <button
+      type="button"
+      class="gear-btn"
+      [class.active]="menuAberto"
+      (click)="menuAberto = !menuAberto"
+    >
+      <span class="material-icons">settings</span>
+    </button>
+
+    <div class="gear-menu" *ngIf="menuAberto">
+      <a routerLink="/contas" routerLinkActive="active" (click)="menuAberto = false">
+        <span class="material-icons">account_balance</span>
+        Contas
+      </a>
+      <a routerLink="/cartoes" routerLinkActive="active" (click)="menuAberto = false">
+        <span class="material-icons">credit_card</span>
+        Cartões
+      </a>
+      <a routerLink="/categorias" routerLinkActive="active" (click)="menuAberto = false">
+        <span class="material-icons">category</span>
+        Categorias
+      </a>
+      <a routerLink="/tags" routerLinkActive="active" (click)="menuAberto = false">
+        <span class="material-icons">sell</span>
+        Tags
+      </a>
+    </div>
+  </div>
+
+</header>
+
+<div class="gear-overlay" *ngIf="menuAberto" (click)="menuAberto = false"></div>
+
+<main class="container">
+  <router-outlet />
+</main>

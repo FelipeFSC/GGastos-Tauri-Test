@@ -1,0 +1,381 @@
+<div class="limites-page">
+
+  <!-- CABEÇALHO -->
+
+  <div class="page-header">
+    <div>
+      <h2>Limites de Gastos</h2>
+      <p>
+        Acompanhe quanto você está gastando em cada categoria.
+      </p>
+    </div>
+  </div>
+
+
+  <!-- SELETOR DE MÊS -->
+
+  <div class="month-navigation">
+
+    <button
+      class="month-button"
+      type="button"
+      (click)="mesAnterior()"
+      title="Mês anterior"
+    >
+      <span class="material-icons">
+        chevron_left
+      </span>
+    </button>
+
+    <div class="month-current">
+      <span class="material-icons">
+        calendar_month
+      </span>
+
+      <strong>
+        {{ mesNome() }}
+      </strong>
+    </div>
+
+    <button
+      class="month-button"
+      type="button"
+      (click)="proximoMes()"
+      title="Próximo mês"
+    >
+      <span class="material-icons">
+        chevron_right
+      </span>
+    </button>
+
+  </div>
+
+
+  <!-- AÇÕES DO MÊS -->
+
+  <div class="month-actions">
+
+    <button
+      class="btn-import"
+      type="button"
+      (click)="importarMesAnterior()"
+    >
+      <span class="material-icons">
+        content_copy
+      </span>
+
+      Importar limites do mês anterior
+    </button>
+
+  </div>
+
+
+  <!-- FORMULÁRIO -->
+
+  <section class="card form-card">
+
+    <div class="form-header">
+
+      <div>
+        <h3>
+          {{ editandoId ? 'Editar limite' : 'Novo limite' }}
+        </h3>
+
+        <p>
+          {{
+            editandoId
+              ? 'Altere o valor do limite desta categoria.'
+              : 'Defina quanto você pretende gastar nesta categoria.'
+          }}
+        </p>
+      </div>
+
+      <button
+        *ngIf="editandoId"
+        class="btn-cancel-edit"
+        type="button"
+        (click)="cancelarEdicao()"
+      >
+        <span class="material-icons">
+          close
+        </span>
+
+        Cancelar
+      </button>
+
+    </div>
+
+
+    <form
+      class="limit-form"
+      (submit)="adicionar($event)"
+    >
+
+      <div class="form-group">
+
+        <label for="categoria">
+          Categoria
+        </label>
+
+        <select
+          id="categoria"
+          [(ngModel)]="categoriaId"
+          name="categoriaId"
+          required
+        >
+
+          <option
+            value=""
+            disabled
+          >
+            Selecione a categoria
+          </option>
+
+          <option
+            *ngFor="let c of categoriasPrincipais"
+            [value]="c.id"
+          >
+            {{ c.nome }}
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="valorLimite">
+          Valor limite
+        </label>
+
+        <div class="money-input">
+
+          <span>
+            R$
+          </span>
+
+          <input
+            id="valorLimite"
+            [(ngModel)]="valorLimite"
+            name="valorLimite"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0,00"
+            required
+          />
+
+        </div>
+
+      </div>
+
+
+      <button
+        class="btn-primary"
+        type="submit"
+      >
+
+        <span class="material-icons">
+          {{ editandoId ? 'save' : 'add' }}
+        </span>
+
+        {{ editandoId ? 'Salvar alteração' : 'Definir limite' }}
+
+      </button>
+
+    </form>
+
+  </section>
+
+
+  <!-- LISTA -->
+
+  <section class="card limits-card">
+
+    <div class="card-header">
+
+      <div>
+
+        <h3>
+          Limites de {{ mesNome() }}
+        </h3>
+
+        <p>
+          {{ limites.length }}
+          limite(s) definido(s)
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="limits-list"
+      *ngIf="limites.length > 0"
+    >
+
+      <div
+        class="limit-item"
+        *ngFor="let limite of limites"
+      >
+
+        <!-- TOPO -->
+
+        <div class="limit-top">
+
+          <div class="limit-category">
+
+            <div class="category-icon">
+              <span class="material-icons">
+                category
+              </span>
+            </div>
+
+            <div>
+
+              <strong>
+                {{ nomeCategoria(limite.categoria_id) }}
+              </strong>
+
+              <span>
+                {{ limite.gasto | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+                de
+                {{ limite.valor_limite | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="limit-values">
+
+            <strong>
+              {{ percentual(limite) | number:'1.0-0' }}%
+            </strong>
+
+            <span>
+              Restante:
+              {{ valorRestante(limite) | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- PROGRESSO -->
+
+        <div class="progress-container">
+
+          <div
+            class="progress-bar"
+            [class.safe]="classeProgresso(limite) === 'safe'"
+            [class.warning]="classeProgresso(limite) === 'warning'"
+            [class.danger]="classeProgresso(limite) === 'danger'"
+            [style.width.%]="percentual(limite)"
+          ></div>
+
+        </div>
+
+
+        <!-- RODAPÉ -->
+
+        <div class="limit-bottom">
+
+          <div class="limit-status">
+
+            <span
+              class="status-dot"
+              [class.safe]="classeProgresso(limite) === 'safe'"
+              [class.warning]="classeProgresso(limite) === 'warning'"
+              [class.danger]="classeProgresso(limite) === 'danger'"
+            ></span>
+
+            <span
+              *ngIf="classeProgresso(limite) === 'safe'"
+            >
+              Dentro do limite
+            </span>
+
+            <span
+              *ngIf="classeProgresso(limite) === 'warning'"
+            >
+              Atenção ao limite
+            </span>
+
+            <span
+              *ngIf="classeProgresso(limite) === 'danger'"
+            >
+              Limite próximo ou ultrapassado
+            </span>
+
+          </div>
+
+
+          <div class="limit-actions">
+
+            <button
+              class="btn-edit"
+              type="button"
+              (click)="iniciarEdicao(limite)"
+              title="Editar limite"
+            >
+
+              <span class="material-icons">
+                edit
+              </span>
+
+              Editar
+
+            </button>
+
+
+            <button
+              class="btn-delete"
+              type="button"
+              (click)="remover(limite.id)"
+              title="Excluir limite"
+            >
+
+              <span class="material-icons">
+                delete
+              </span>
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- VAZIO -->
+
+    <div
+      class="empty"
+      *ngIf="limites.length === 0"
+    >
+
+      <span class="material-icons">
+        account_balance_wallet
+      </span>
+
+      <strong>
+        Nenhum limite definido
+      </strong>
+
+      <span>
+        Defina um limite para este mês ou importe os limites do mês anterior.
+      </span>
+
+    </div>
+
+  </section>
+
+</div>

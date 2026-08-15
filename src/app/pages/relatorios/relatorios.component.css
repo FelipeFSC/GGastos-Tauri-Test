@@ -1,0 +1,31 @@
+.relatorios-page {
+  padding: 32px;
+  background: #f7f8fa;
+  min-height: 100%;
+}
+
+.card.empty {
+  background: #fff;
+  border: 1px solid #e7e9ee;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 60px 24px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.card.empty .material-icons {
+  font-size: 40px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.card.empty strong {
+  font-size: 16px;
+  color: #202124;
+}

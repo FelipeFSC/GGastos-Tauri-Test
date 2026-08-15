@@ -1,0 +1,153 @@
+.topbar {
+  height: 60px;
+  padding: 0 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+
+  background: #4285f4;
+  color: #fff;
+
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 17px;
+
+  flex-shrink: 0;
+}
+
+.brand .material-icons {
+  font-size: 22px;
+}
+
+.topbar-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  flex: 1;
+  justify-content: center;
+}
+
+.topbar-center a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+
+  padding: 8px 14px;
+  border-radius: 8px;
+
+  transition: 0.15s;
+}
+
+.topbar-center a:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.topbar-center a.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.topbar-right {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.gear-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+
+  transition: 0.15s;
+}
+
+.gear-btn:hover,
+.gear-btn.active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.gear-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.gear-menu {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  z-index: 101;
+
+  min-width: 190px;
+
+  background: #fff;
+  border: 1px solid #e7e9ee;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  padding: 6px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gear-menu a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 9px 10px;
+  border-radius: 7px;
+
+  color: #374151;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.gear-menu a .material-icons {
+  font-size: 18px;
+  color: #6b7280;
+}
+
+.gear-menu a:hover {
+  background: #f3f4f6;
+}
+
+.gear-menu a.active {
+  background: #eef4ff;
+  color: #4285f4;
+}
+
+.gear-menu a.active .material-icons {
+  color: #4285f4;
+}
+
+.container {
+  min-height: calc(100% - 60px);
+}
