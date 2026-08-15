@@ -45,14 +45,15 @@
             <div class="form-group">
                 <label> Descrição </label>
 
-                <input type="text" [(ngModel)]="form.descricao" placeholder="Ex.: Salário, mercado, aluguel..." />
+                <input type="text" [(ngModel)]="form.descricao"
+                    placeholder="Ex.: Salário, mercado, aluguel... (opcional)" />
             </div>
 
             <!-- VALOR / DATA / JOIA -->
 
             <div class="form-row main-values">
                 <div class="form-group">
-                    <label> Valor </label>
+                    <label> Valor * </label>
 
                     <div class="money-input">
                         <span> R$ </span>
@@ -62,7 +63,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label> Data </label>
+                    <label> Data * </label>
 
                     <input type="date" [(ngModel)]="form.data" />
                 </div>
@@ -80,10 +81,10 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label> Conta / Cartão </label>
+                    <label> Conta / Cartão * </label>
 
                     <select [(ngModel)]="form.origem" [disabled]="!!origemFixa">
-                        <option value="">Selecione uma conta ou cartão</option>
+                        <option value="" disabled>Selecione uma conta ou cartão</option>
 
                         <optgroup label="Contas">
                             <option *ngFor="let conta of contas" [value]="'conta:' + conta.id">
@@ -100,10 +101,10 @@
                 </div>
 
                 <div class="form-group">
-                    <label> Categoria </label>
+                    <label> Categoria * </label>
 
                     <select [(ngModel)]="form.categoria_id">
-                        <option value="">Selecione uma categoria</option>
+                        <option value="" disabled>Selecione uma categoria</option>
 
                         <ng-container *ngFor="let categoria of categoriasPrincipais">
                             <option [value]="categoria.id">

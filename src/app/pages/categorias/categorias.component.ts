@@ -97,7 +97,12 @@ export class CategoriasComponent implements OnInit {
     async adicionar(event: Event) {
         event.preventDefault();
 
-        if (!this.nome.trim()) return;
+        const erro = this.validar(this.nome, this.tipo, this.icone, this.cor);
+
+        if (erro) {
+            alert(erro);
+            return;
+        }
 
         await this.db.run(
             `INSERT INTO categorias
@@ -119,6 +124,32 @@ export class CategoriasComponent implements OnInit {
         this.cor = "#4285f4";
 
         await this.carregar();
+    }
+
+    /** Nome, tipo, ícone e cor são obrigatórios (categoria principal). */
+    private validar(
+        nome: string,
+        tipo: string,
+        icone: string,
+        cor: string,
+    ): string | null {
+        if (!nome.trim()) {
+            return "Informe o nome da categoria.";
+        }
+
+        if (!tipo) {
+            return "Selecione o tipo da categoria.";
+        }
+
+        if (!icone) {
+            return "Selecione um ícone para a categoria.";
+        }
+
+        if (!cor) {
+            return "Selecione uma cor para a categoria.";
+        }
+
+        return null;
     }
 
     // =========================================================
@@ -150,9 +181,19 @@ export class CategoriasComponent implements OnInit {
     async salvarEdicao(event: Event, categoria: Categoria) {
         event.preventDefault();
 
-        const nome = this.nomeEdicao.trim();
+        const erro = this.validar(
+            this.nomeEdicao,
+            this.tipoEdicao,
+            this.iconeEdicao,
+            this.corEdicao,
+        );
 
-        if (!nome) return;
+        if (erro) {
+            alert(erro);
+            return;
+        }
+
+        const nome = this.nomeEdicao.trim();
 
         await this.db.run(
             `UPDATE categorias

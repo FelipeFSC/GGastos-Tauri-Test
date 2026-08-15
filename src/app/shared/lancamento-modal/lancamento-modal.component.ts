@@ -730,11 +730,6 @@ export class LancamentoModalComponent implements OnInit {
 
         const valor = this.valorNumerico();
 
-        if (!descricao) {
-            alert("Informe a descrição do lançamento.");
-            return;
-        }
-
         if (valor <= 0) {
             alert("Informe um valor válido.");
             return;
@@ -742,6 +737,16 @@ export class LancamentoModalComponent implements OnInit {
 
         if (!this.form.data) {
             alert("Informe a data do lançamento.");
+            return;
+        }
+
+        if (!this.form.origem) {
+            alert("Selecione uma conta ou cartão.");
+            return;
+        }
+
+        if (!this.form.categoria_id) {
+            alert("Selecione uma categoria.");
             return;
         }
 

@@ -1,7 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, RouterLink } from "@angular/router";
-import { DatabaseService, USUARIO_LOCAL_ID } from "../../services/database.service";
+import { DatabaseService, USUARIO_LOCAL_ID, FaturaResumoPeriodo } from "../../services/database.service";
 
 interface Conta {
   id: string;
@@ -37,6 +37,8 @@ interface ContaAPagar {
   data: string;
   icone: string | null;
   cor: string | null;
+  /** Setado quando o item representa a fatura de um cartão (não um lançamento avulso). */
+  faturaId?: string;
 }
 
 interface GastoCategoria {
@@ -189,14 +191,48 @@ export class VisaoGeralComponent implements OnInit {
   }
 
   private async carregarContasAPagar(inicio: string, fim: string): Promise<void> {
-    this.contasAPagar = await this.db.query<ContaAPagar>(
+    // Compras no cartão não entram aqui como lançamentos avulsos — elas
+    // viram 1 item só (a fatura), igual a listagem de Lançamentos.
+    const lancamentos = await this.db.query<ContaAPagar>(
       `SELECT l.id, l.descricao, l.valor, l.data, c.icone, c.cor
        FROM lancamentos l
        LEFT JOIN categorias c ON c.id = l.categoria_id
-       WHERE l.usuario_id = ? AND l.tipo = 'despesa' AND l.confirmado = 0 AND l.data BETWEEN ? AND ?
+       WHERE l.usuario_id = ? AND l.tipo = 'despesa' AND l.confirmado = 0
+         AND l.cartao_id IS NULL AND l.data BETWEEN ? AND ?
        ORDER BY l.data ASC`,
       [USUARIO_LOCAL_ID, inicio, fim]
     );
+
+    const primeiroDiaProximoMes = this.formatarData(new Date(this.ano, this.mes, 1));
+
+    const faturas = await this.db.listarFaturasPorVencimento(inicio, primeiroDiaProximoMes);
+
+    const faturasEmAberto: ContaAPagar[] = faturas
+      .filter((f) => f.valorRestante > 0.01)
+      .map((f) => this.faturaComoContaAPagar(f));
+
+    this.contasAPagar = [...lancamentos, ...faturasEmAberto].sort((a, b) =>
+      a.data.localeCompare(b.data)
+    );
+  }
+
+  private faturaComoContaAPagar(fatura: FaturaResumoPeriodo): ContaAPagar {
+    return {
+      id: fatura.id,
+      descricao: `Fatura ${NOMES_MES[fatura.mes_referencia - 1]} ${fatura.ano_referencia}`,
+      valor: fatura.valorRestante,
+      data: fatura.data_vencimento,
+      icone: fatura.cartao_icone,
+      cor: fatura.cartao_cor,
+      faturaId: fatura.id,
+    };
+  }
+
+  private formatarData(data: Date): string {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, "0");
+    const dia = String(data.getDate()).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
   }
 
   private async carregarMaioresGastos(inicio: string, fim: string): Promise<void> {

@@ -40,6 +40,7 @@ export interface FaturaResumoPeriodo {
   ano_referencia: number;
   data_vencimento: string;
   valorTotal: number;
+  valorRestante: number;
 }
 
 export interface FaturaDetalhada {
@@ -1914,6 +1915,7 @@ export class DatabaseService {
 
       const saldo = saldosPorCartao.get(fatura.cartao_id)!.get(fatura.id);
       const valorTotal = saldo ? saldo.valorTotal : 0;
+      const valorRestante = saldo ? saldo.valorRestante : 0;
 
       if (valorTotal !== 0) {
         resultado.push({
@@ -1926,6 +1928,7 @@ export class DatabaseService {
           ano_referencia: fatura.ano_referencia,
           data_vencimento: fatura.data_vencimento,
           valorTotal,
+          valorRestante,
         });
       }
     }

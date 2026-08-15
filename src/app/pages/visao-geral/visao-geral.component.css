@@ -187,6 +187,18 @@
   align-items: center;
   gap: 12px;
   padding: 10px 0;
+
+  text-decoration: none;
+  color: inherit;
+}
+
+.list-item.clickable {
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.list-item.clickable:hover {
+  background: #f5f7fa;
 }
 
 .item-icon {

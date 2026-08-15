@@ -108,7 +108,12 @@ export class CartoesComponent implements OnInit {
     async adicionar(event: Event) {
         event.preventDefault();
 
-        if (!this.nome.trim()) return;
+        const erro = this.validar();
+
+        if (erro) {
+            alert(erro);
+            return;
+        }
 
         await this.db.run(
             `INSERT INTO cartoes_credito
@@ -151,7 +156,14 @@ export class CartoesComponent implements OnInit {
     async salvarEdicao(event: Event) {
         event.preventDefault();
 
-        if (!this.editandoId || !this.nome.trim()) return;
+        if (!this.editandoId) return;
+
+        const erro = this.validar();
+
+        if (erro) {
+            alert(erro);
+            return;
+        }
 
         await this.db.run(
             `UPDATE cartoes_credito
@@ -182,6 +194,39 @@ export class CartoesComponent implements OnInit {
     cancelarEdicao() {
         this.editandoId = null;
         this.limparFormulario();
+    }
+
+    /** Nome, ícone, cor, limite, fechamento, vencimento e conta de pagamento são obrigatórios. */
+    private validar(): string | null {
+        if (!this.nome.trim()) {
+            return "Informe o nome do cartão.";
+        }
+
+        if (!this.icone) {
+            return "Selecione um ícone para o cartão.";
+        }
+
+        if (!this.cor) {
+            return "Selecione uma cor para o cartão.";
+        }
+
+        if (!(this.limite > 0)) {
+            return "Informe o limite do cartão.";
+        }
+
+        if (!this.diaFechamento || this.diaFechamento < 1 || this.diaFechamento > 31) {
+            return "Informe o dia de fechamento (entre 1 e 31).";
+        }
+
+        if (!this.diaVencimento || this.diaVencimento < 1 || this.diaVencimento > 31) {
+            return "Informe o dia de vencimento (entre 1 e 31).";
+        }
+
+        if (!this.contaPagamentoId) {
+            return "Selecione a conta para pagamento do cartão.";
+        }
+
+        return null;
     }
 
     limparFormulario() {

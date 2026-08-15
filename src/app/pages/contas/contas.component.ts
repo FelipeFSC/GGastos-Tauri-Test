@@ -49,7 +49,12 @@ export class ContasComponent implements OnInit {
 	async adicionar(event: Event) {
 		event.preventDefault();
 
-		if (!this.nome.trim()) return;
+		const erro = this.validar();
+
+		if (erro) {
+			alert(erro);
+			return;
+		}
 
 		await this.db.run(
 			`INSERT INTO contas
@@ -88,7 +93,14 @@ export class ContasComponent implements OnInit {
 	async salvarEdicao(event: Event) {
 		event.preventDefault();
 
-		if (!this.editandoId || !this.nome.trim()) return;
+		if (!this.editandoId) return;
+
+		const erro = this.validar();
+
+		if (erro) {
+			alert(erro);
+			return;
+		}
 
 		await this.db.run(
 			`UPDATE contas
@@ -115,6 +127,23 @@ export class ContasComponent implements OnInit {
 	cancelarEdicao() {
 		this.editandoId = null;
 		this.limparFormulario();
+	}
+
+	/** Nome, ícone e cor são obrigatórios. */
+	private validar(): string | null {
+		if (!this.nome.trim()) {
+			return "Informe o nome da conta.";
+		}
+
+		if (!this.icone) {
+			return "Selecione um ícone para a conta.";
+		}
+
+		if (!this.cor) {
+			return "Selecione uma cor para a conta.";
+		}
+
+		return null;
 	}
 
 	limparFormulario() {

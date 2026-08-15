@@ -33,13 +33,13 @@
 
             <form (submit)="editandoId ? salvarEdicao($event) : adicionar($event)">
                 <div class="form-group">
-                    <label for="nome"> Nome da conta </label>
+                    <label for="nome"> Nome da conta * </label>
 
-                    <input id="nome" [(ngModel)]="nome" name="nome" placeholder="Ex: Carteira, Nubank..." required />
+                    <input id="nome" [(ngModel)]="nome" name="nome" placeholder="Ex: Carteira, Nubank..." />
                 </div>
 
                 <div class="form-group">
-                    <label> Ícone </label>
+                    <label> Ícone * </label>
 
                     <app-icon-picker-button [icone]="icone" [cor]="cor" (iconeSelecionado)="icone = $event">
                     </app-icon-picker-button>
@@ -49,7 +49,7 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="cor"> Cor </label>
+                        <label for="cor"> Cor * </label>
 
                         <div class="color-input">
                             <input id="cor" [(ngModel)]="cor" name="cor" type="color" />

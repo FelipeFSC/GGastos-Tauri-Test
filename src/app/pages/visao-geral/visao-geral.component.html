@@ -97,7 +97,8 @@
       <div class="card">
         <h3 class="section-title">Contas a pagar</h3>
 
-        <div class="list-item" *ngFor="let l of contasAPagar">
+        <a *ngFor="let l of contasAPagar" class="list-item" [class.clickable]="!!l.faturaId"
+          [routerLink]="l.faturaId ? ['/fatura', l.faturaId] : null">
           <div class="item-icon" [style.background]="l.cor || '#9aa0a6'">
             <span class="material-icons">{{ l.icone || 'receipt_long' }}</span>
           </div>
@@ -108,7 +109,7 @@
           </div>
 
           <strong class="item-value negativo">R$ {{ l.valor | number:'1.2-2' }}</strong>
-        </div>
+        </a>
 
         <p class="empty-hint" *ngIf="contasAPagar.length === 0">Nenhuma conta a pagar em aberto.</p>
       </div>
