@@ -227,9 +227,9 @@
 
           <div class="limit-category">
 
-            <div class="category-icon">
-              <span class="material-icons">
-                category
+            <div class="category-icon" [style.background]="corCategoria(limite.categoria_id)">
+              <span class="material-icons" style="color: white">
+                {{ iconeCategoria(limite.categoria_id) }}
               </span>
             </div>
 

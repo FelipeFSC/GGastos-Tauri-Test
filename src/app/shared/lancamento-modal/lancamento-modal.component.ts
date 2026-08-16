@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { DatabaseService, USUARIO_LOCAL_ID } from "../../services/database.service";
+import { DatabaseService, USUARIO_LOCAL_ID, EscopoEdicao } from "../../services/database.service";
 
 interface Conta {
     id: string;
@@ -107,6 +107,9 @@ export class LancamentoModalComponent implements OnInit {
     /** Emitido quando um lançamento é criado/editado com sucesso. */
     @Output() salvo = new EventEmitter<void>();
 
+    /** Emitido quando o lançamento em edição é excluído. */
+    @Output() excluido = new EventEmitter<void>();
+
     contas: Conta[] = [];
     cartoes: Cartao[] = [];
     categorias: Categoria[] = [];
@@ -122,6 +125,9 @@ export class LancamentoModalComponent implements OnInit {
      */
     editarId: string | null = null;
 
+    /** Cartão do lançamento antes da edição (null se não for cartão ou for criação nova). */
+    cartaoIdOriginal: string | null = null;
+
     /**
      * true quando o lançamento em edição pertence a um grupo de repetição
      * (fixo ou parcelado). Nesse caso o tipo de repetição fica travado e
@@ -132,6 +138,7 @@ export class LancamentoModalComponent implements OnInit {
     escopoEdicao: "atual" | "atual_e_proximos" | "todos" = "atual";
 
     salvando = false;
+    excluindo = false;
 
     /** Tags cadastradas no CRUD de tags, usadas para popular o select. */
     tagsDisponiveis: TagRef[] = [];
@@ -229,6 +236,7 @@ export class LancamentoModalComponent implements OnInit {
         this.tipoModal = tipo;
 
         this.editarId = null;
+        this.cartaoIdOriginal = null;
         this.editandoGrupo = false;
         this.tipoRepeticaoOriginal = null;
         this.escopoEdicao = "atual";
@@ -254,6 +262,7 @@ export class LancamentoModalComponent implements OnInit {
      */
     async abrirEdicao(lancamento: Lancamento): Promise<void> {
         this.editarId = lancamento.id;
+        this.cartaoIdOriginal = lancamento.cartao_id;
 
         this.tipoModal = lancamento.tipo === "receita" ? "receita" : "despesa";
 
@@ -352,6 +361,7 @@ export class LancamentoModalComponent implements OnInit {
          * ao fechar o modal, saímos do modo de edição.
          */
         this.editarId = null;
+        this.cartaoIdOriginal = null;
         this.editandoGrupo = false;
         this.tipoRepeticaoOriginal = null;
         this.escopoEdicao = "atual";
@@ -808,6 +818,11 @@ export class LancamentoModalComponent implements OnInit {
                     await this.salvarAnexosPendentes(this.editarId);
                 }
 
+                await this.verificarFaturasEnvolvidas([
+                    this.cartaoIdOriginal,
+                    origem.cartao_id,
+                ]);
+
                 this.salvo.emit();
 
                 this.fecharModal();
@@ -864,6 +879,8 @@ export class LancamentoModalComponent implements OnInit {
                 await this.salvarLancamentoFixo(descricao, valor, origem);
             }
 
+            await this.verificarFaturasEnvolvidas([origem.cartao_id]);
+
             this.salvo.emit();
 
             this.fecharModal();
@@ -873,6 +890,65 @@ export class LancamentoModalComponent implements OnInit {
             alert("Não foi possível salvar o lançamento.");
         } finally {
             this.salvando = false;
+        }
+    }
+
+    /**
+     * Roda a verificação de faturas (ver `DatabaseService.verificarFaturasDoCartao`)
+     * pros cartões afetados por uma criação/edição/exclusão de lançamento —
+     * o cartão atual do lançamento e, numa edição, também o cartão anterior
+     * (caso a origem tenha mudado de cartão pra outro cartão/conta).
+     */
+    private async verificarFaturasEnvolvidas(
+        cartaoIds: (string | null | undefined)[],
+    ): Promise<void> {
+        const unicos = Array.from(
+            new Set(cartaoIds.filter((id): id is string => !!id)),
+        );
+
+        for (const cartaoId of unicos) {
+            await this.db.verificarFaturasDoCartao(cartaoId);
+        }
+    }
+
+    // =====================================================================
+    // EXCLUSÃO
+    // =====================================================================
+
+    /**
+     * Exclui o lançamento em edição. Se ele pertencer a um grupo (fixo ou
+     * parcelado), reaproveita o mesmo escopo já selecionado no painel
+     * "Aplicar alteração em" — não abre um segundo pop-up perguntando de
+     * novo o que excluir.
+     */
+    async excluirLancamento(): Promise<void> {
+        if (!this.editarId || this.salvando || this.excluindo) {
+            return;
+        }
+
+        if (!confirm("Tem certeza que deseja excluir este lançamento?")) {
+            return;
+        }
+
+        this.excluindo = true;
+
+        try {
+            await this.db.excluirLancamentoComEscopo(
+                this.editarId,
+                this.editandoGrupo ? this.escopoEdicao : ("atual" as EscopoEdicao),
+            );
+
+            await this.verificarFaturasEnvolvidas([this.cartaoIdOriginal]);
+
+            this.excluido.emit();
+
+            this.fecharModal();
+        } catch (erro) {
+            console.error("Erro ao excluir lançamento:", erro);
+
+            alert("Não foi possível excluir o lançamento.");
+        } finally {
+            this.excluindo = false;
         }
     }
 

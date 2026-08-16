@@ -4,7 +4,6 @@ import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import {
     DatabaseService,
-    EscopoEdicao,
     FaturaDetalhada,
     PagamentoFatura,
 } from "../../services/database.service";
@@ -33,6 +32,12 @@ interface FormPagamento {
     contaId: string;
 }
 
+interface GrupoLancamentos {
+    data: string;
+    dia: number;
+    itens: Lancamento[];
+}
+
 const NOMES_MES = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
@@ -59,15 +64,13 @@ export class FaturaComponent implements OnInit {
 
     lancamentos: Lancamento[] = [];
     lancamentosFiltrados: Lancamento[] = [];
+    gruposLancamentos: GrupoLancamentos[] = [];
     filtro = "";
 
     tagsPorLancamento: Record<string, TagRef[]> = {};
     anexosCountPorLancamento: Record<string, number> = {};
 
     menuAdicionarAberto = false;
-
-    modalExcluirAberto = false;
-    lancamentoParaExcluir: Lancamento | null = null;
 
     modalPagamentoAberto = false;
     pagamentoEmEdicaoId: string | null = null;
@@ -162,6 +165,28 @@ export class FaturaComponent implements OnInit {
         this.lancamentosFiltrados = termo
             ? this.lancamentos.filter((l) => (l.descricao || "").toLowerCase().includes(termo))
             : this.lancamentos;
+
+        this.organizarPorDia();
+    }
+
+    private organizarPorDia(): void {
+        const grupos = new Map<string, Lancamento[]>();
+
+        for (const lancamento of this.lancamentosFiltrados) {
+            if (!grupos.has(lancamento.data)) {
+                grupos.set(lancamento.data, []);
+            }
+
+            grupos.get(lancamento.data)!.push(lancamento);
+        }
+
+        this.gruposLancamentos = Array.from(grupos.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([data, itens]) => ({
+                data,
+                dia: Number(data.split("-")[2]),
+                itens,
+            }));
     }
 
     // =====================================================================
@@ -259,12 +284,6 @@ export class FaturaComponent implements OnInit {
         return this.valorFormatado(Math.abs(valor));
     }
 
-    diaMesFormatado(data: string): string {
-        const [, mes, dia] = data.split("-");
-
-        return `${dia}/${mes}`;
-    }
-
     async alternarConfirmado(lancamento: Lancamento): Promise<void> {
         const novoEstado = Number(lancamento.confirmado) === 1 ? 0 : 1;
 
@@ -279,38 +298,6 @@ export class FaturaComponent implements OnInit {
             console.error("Erro ao alterar confirmação:", erro);
 
             alert("Não foi possível alterar o status do lançamento.");
-        }
-    }
-
-    remover(lancamento: Lancamento): void {
-        if (!lancamento.grupo_parcelamento_id) {
-            this.excluirComEscopo(lancamento.id, "atual");
-            return;
-        }
-
-        this.lancamentoParaExcluir = lancamento;
-        this.modalExcluirAberto = true;
-    }
-
-    fecharModalExcluir(): void {
-        this.modalExcluirAberto = false;
-        this.lancamentoParaExcluir = null;
-    }
-
-    async confirmarExclusao(escopo: EscopoEdicao): Promise<void> {
-        if (!this.lancamentoParaExcluir) return;
-
-        await this.excluirComEscopo(this.lancamentoParaExcluir.id, escopo);
-        this.fecharModalExcluir();
-    }
-
-    private async excluirComEscopo(id: string, escopo: EscopoEdicao): Promise<void> {
-        try {
-            await this.db.excluirLancamentoComEscopo(id, escopo);
-            await this.carregar();
-        } catch (erro) {
-            console.error("Erro ao excluir lançamento:", erro);
-            alert("Não foi possível excluir o lançamento.");
         }
     }
 

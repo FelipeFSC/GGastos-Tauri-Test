@@ -180,82 +180,78 @@
                 <span class="material-icons"> search </span>
             </div>
 
-            <div class="fatura-lancamento-row" *ngFor="let l of lancamentosFiltrados">
-                <span class="fatura-lancamento-data"> {{ diaMesFormatado(l.data) }} </span>
-
-                <div class="category-icon" [style.background]="corCategoria(l)" [title]="nomeCategoria(l)">
-                    <span class="material-icons">
-                        {{ iconeCategoria(l) }}
+            <div class="day-group" *ngFor="let grupo of gruposLancamentos">
+                <div class="day-column">
+                    <span class="day-number">
+                        {{ grupo.dia }}
                     </span>
                 </div>
 
-                <div class="lancamento-description">
-                    <strong>
-                        {{ l.descricao || "Sem descrição" }}
-                    </strong>
+                <div class="day-list">
+                    <div class="lancamento-row" *ngFor="let l of grupo.itens" (click)="modal.abrirEdicao(l)">
+                        <div class="category-icon" [style.background]="corCategoria(l)" [title]="nomeCategoria(l)">
+                            <span class="material-icons">
+                                {{ iconeCategoria(l) }}
+                            </span>
+                        </div>
 
-                    <span class="category-name">
-                        {{ nomeCategoria(l) }}
-                    </span>
-                </div>
+                        <div class="lancamento-description">
+                            <strong>
+                                {{ l.descricao || "Sem descrição" }}
+                            </strong>
 
-                <div class="lancamento-indicators">
-                    <span *ngIf="ehFixo(l)" class="indicator" title="Lançamento fixo (recorrente)">
-                        <span class="material-icons"> repeat </span>
-                    </span>
+                            <span class="category-name">
+                                {{ nomeCategoria(l) }}
+                            </span>
+                        </div>
 
-                    <span *ngIf="ehParcelado(l)" class="indicator" [title]="'Parcela ' + textoParcela(l)">
-                        <span class="material-icons"> receipt_long </span>
-                        <small>{{ textoParcela(l) }}</small>
-                    </span>
+                        <div class="lancamento-indicators">
+                            <span *ngIf="ehFixo(l)" class="indicator" title="Lançamento fixo (recorrente)">
+                                <span class="material-icons"> repeat </span>
+                            </span>
 
-                    <span class="indicator obs-indicator" *ngIf="l.observacao">
-                        <span class="material-icons"> notes </span>
-                        <span class="obs-tooltip">{{ l.observacao }}</span>
-                    </span>
+                            <span *ngIf="ehParcelado(l)" class="indicator" [title]="'Parcela ' + textoParcela(l)">
+                                <span class="material-icons"> receipt_long </span>
+                                <small>{{ textoParcela(l) }}</small>
+                            </span>
 
-                    <span class="indicator" *ngIf="tagsDoLancamento(l).length" [title]="tituloTags(l)">
-                        <span class="material-icons"> sell </span>
-                        <small *ngIf="tagsDoLancamento(l).length > 1">{{ tagsDoLancamento(l).length }}</small>
-                    </span>
+                            <span class="indicator obs-indicator" *ngIf="l.observacao">
+                                <span class="material-icons"> notes </span>
+                                <span class="obs-tooltip">{{ l.observacao }}</span>
+                            </span>
 
-                    <span class="indicator" *ngIf="quantidadeAnexos(l) > 0"
-                        [title]="quantidadeAnexos(l) + ' anexo(s)'">
-                        <span class="material-icons"> attach_file </span>
-                        <small *ngIf="quantidadeAnexos(l) > 1">{{ quantidadeAnexos(l) }}</small>
-                    </span>
-                </div>
+                            <span class="indicator" *ngIf="tagsDoLancamento(l).length" [title]="tituloTags(l)">
+                                <span class="material-icons"> sell </span>
+                                <small *ngIf="tagsDoLancamento(l).length > 1">{{ tagsDoLancamento(l).length }}</small>
+                            </span>
 
-                <div class="lancamento-value" [class.valor-receita]="l.tipo === 'receita'"
-                    [class.valor-despesa]="l.tipo === 'despesa'">
-                    <span>
-                        {{ l.tipo === "receita" ? "+" : "-" }}
-                        R$ {{ valorFormatado(l.valor) }}
-                    </span>
-                </div>
+                            <span class="indicator" *ngIf="quantidadeAnexos(l) > 0"
+                                [title]="quantidadeAnexos(l) + ' anexo(s)'">
+                                <span class="material-icons"> attach_file </span>
+                                <small *ngIf="quantidadeAnexos(l) > 1">{{ quantidadeAnexos(l) }}</small>
+                            </span>
+                        </div>
 
-                <button type="button" class="lancamento-jewel" [class.confirmado]="+l.confirmado === 1" [title]="
-            +l.confirmado === 1
-              ? 'Confirmado — clique para desmarcar'
-              : 'Marcar como pago/recebido'
-          " (click)="alternarConfirmado(l)">
-                    <span class="material-icons">
-                        {{ +l.confirmado === 1 ? "check_circle" : "radio_button_unchecked" }}
-                    </span>
-                </button>
+                        <div class="lancamento-value" [class.valor-receita]="l.tipo === 'receita'"
+                            [class.valor-despesa]="l.tipo === 'despesa'">
+                            <span>
+                                {{ l.tipo === "receita" ? "+" : "-" }}
+                                R$ {{ valorFormatado(l.valor) }}
+                            </span>
+                        </div>
 
-                <div class="lancamento-actions">
-                    <button type="button" class="btn-row-action" title="Editar" (click)="modal.abrirEdicao(l)">
-                        <span class="material-icons"> edit </span>
-                    </button>
-
-                    <button type="button" class="btn-row-action delete" title="Excluir" (click)="remover(l)">
-                        <span class="material-icons"> delete </span>
-                    </button>
+                        <button type="button" class="lancamento-jewel" [class.confirmado]="+l.confirmado === 1" [title]="
+                    +l.confirmado === 1
+                      ? 'Confirmado — clique para desmarcar'
+                      : 'Marcar como pago/recebido'
+                  " (click)="$event.stopPropagation(); alternarConfirmado(l)">
+                            <span class="material-icons">thumb_up</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="empty-lancamentos" *ngIf="lancamentosFiltrados.length === 0">
+            <div class="empty-lancamentos" *ngIf="gruposLancamentos.length === 0">
                 <div class="empty-icon">
                     <span class="material-icons"> receipt_long </span>
                 </div>
@@ -278,7 +274,8 @@
 <!-- ===================================================== -->
 
 <app-lancamento-modal #modal [origemFixa]="fatura ? { tipo: 'cartao', id: fatura.cartao_id } : null"
-    [dataSugerida]="fatura ? fatura.data_fechamento : null" (salvo)="carregar()"></app-lancamento-modal>
+    [dataSugerida]="fatura ? fatura.data_fechamento : null" (salvo)="carregar()"
+    (excluido)="carregar()"></app-lancamento-modal>
 
 <!-- ===================================================== -->
 <!-- MODAL DE PAGAMENTO -->
@@ -332,50 +329,6 @@
             <button type="button" class="btn-save" (click)="salvarPagamento()" [disabled]="salvandoPagamento">
                 <span class="material-icons"> save </span>
                 {{ salvandoPagamento ? "Salvando..." : (pagamentoEmEdicaoId ? "Salvar" : "Pagar fatura") }}
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- ===================================================== -->
-<!-- MODAL DE EXCLUSÃO (lançamento de grupo) -->
-<!-- ===================================================== -->
-
-<div class="modal-overlay" *ngIf="modalExcluirAberto" (click)="fecharModalExcluir()">
-    <div class="modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-            <div>
-                <h2>Excluir lançamento</h2>
-                <p>Este lançamento faz parte de uma repetição. O que você quer excluir?</p>
-            </div>
-
-            <button type="button" class="modal-close" (click)="fecharModalExcluir()" title="Fechar">
-                <span class="material-icons">close</span>
-            </button>
-        </div>
-
-        <div class="modal-body">
-            <div class="repeat-options scope-options">
-                <button type="button" (click)="confirmarExclusao('todos')">
-                    <strong>Excluir todos</strong>
-                    <span>Passadas e futuras</span>
-                </button>
-
-                <button type="button" (click)="confirmarExclusao('atual_e_proximos')">
-                    <strong>Excluir o atual e os próximos</strong>
-                    <span>A partir desta ocorrência</span>
-                </button>
-
-                <button type="button" (click)="confirmarExclusao('atual')">
-                    <strong>Excluir apenas o atual</strong>
-                    <span>Só esta ocorrência</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-cancel" (click)="fecharModalExcluir()">
-                Cancelar
             </button>
         </div>
     </div>

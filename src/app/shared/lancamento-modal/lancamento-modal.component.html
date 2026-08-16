@@ -68,12 +68,12 @@
                     <input type="date" [(ngModel)]="form.data" />
                 </div>
 
-                <button type="button" class="option-button" [class.active]="form.confirmado" [title]="
+                <button type="button" class="option-button confirmado-toggle" [class.active]="form.confirmado" [title]="
             form.confirmado
               ? 'Lançamento confirmado'
               : 'Marcar como pago/confirmado'
           " (click)="form.confirmado = !form.confirmado">
-                    <span class="material-icons"> diamond </span>
+                    <span class="material-icons"> thumb_up </span>
                 </button>
             </div>
 
@@ -401,15 +401,14 @@
         <!-- FOOTER -->
 
         <div class="modal-footer">
-            <button type="button" class="btn-cancel" (click)="fecharModal()">
-                Cancelar
+            <button type="button" class="btn-delete" *ngIf="editarId" title="Excluir lançamento"
+                (click)="excluirLancamento()" [disabled]="salvando || excluindo">
+                <span class="material-icons"> delete </span>
             </button>
 
-            <button type="button" class="btn-save" [class.expense]="tipoModal === 'despesa'"
-                (click)="salvarLancamento()" [disabled]="salvando">
-                <span class="material-icons"> save </span>
-
-                {{ salvando ? "Salvando..." : "Salvar" }}
+            <button type="button" class="btn-save" [class.expense]="tipoModal === 'despesa'" title="Salvar"
+                (click)="salvarLancamento()" [disabled]="salvando || excluindo">
+                <span class="material-icons"> check </span>
             </button>
         </div>
     </div>

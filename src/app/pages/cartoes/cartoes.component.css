@@ -45,6 +45,15 @@
 
 .cards-list {
   overflow: hidden;
+
+  /*
+   * O layout do resumo do cartão (.card-summary) depende do espaço
+   * disponível NESSA coluna, não da largura da janela — com o container
+   * geral do app limitado (ver app.component.css), a coluna pode ficar
+   * apertada mesmo em janelas bem largas. Por isso os breakpoints do
+   * cartão usam @container (abaixo) em vez de @media.
+   */
+  container-type: inline-size;
 }
 
 
@@ -512,7 +521,29 @@
 
 /* RESPONSIVE */
 
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .cartoes-page {
+    padding: 20px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+ * Abaixo: breakpoints do cartão (.card-summary e afins) baseados na
+ * largura real da coluna (@container), não da janela — ver comentário
+ * em .cards-list.
+ */
+
+@container (max-width: 660px) {
   .card-summary {
     grid-template-columns: 170px 1fr;
   }
@@ -526,25 +557,7 @@
   }
 }
 
-@media (max-width: 900px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .card-summary {
-    grid-template-columns: 190px 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .cartoes-page {
-    padding: 20px;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
+@container (max-width: 460px) {
   .card-summary {
     grid-template-columns: 1fr;
   }

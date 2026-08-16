@@ -1,11 +1,10 @@
-import { Component, OnInit, ViewChild } from "@angular/core";
+import { Component, HostListener, OnInit, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import {
     DatabaseService,
     USUARIO_LOCAL_ID,
-    EscopoEdicao,
     FaturaResumoPeriodo,
 } from "../../services/database.service";
 import {
@@ -77,8 +76,13 @@ export class LancamentosComponent implements OnInit {
 
     menuAdicionarAberto = false;
 
-    modalExcluirAberto = false;
-    lancamentoParaExcluir: Lancamento | null = null;
+    /** Qual dropdown de filtro está aberto no momento (só um por vez). */
+    filtroAberto: "tipo" | "origem" | "categoria" | null = null;
+
+    /** Conjuntos vazios = sem restrição (mostra tudo) nesse filtro. */
+    filtroTipos = new Set<string>();
+    filtroOrigens = new Set<string>();
+    filtroCategorias = new Set<string>();
 
     /** Tags/anexos dos lançamentos carregados no mês, indexados por id do lançamento (para a listagem). */
     tagsPorLancamento: Record<string, TagRef[]> = {};
@@ -88,6 +92,16 @@ export class LancamentosComponent implements OnInit {
         private db: DatabaseService,
         private route: ActivatedRoute,
     ) { }
+
+    /*
+     * Fecha qualquer dropdown de filtro aberto ao clicar fora dele.
+     * Os cliques dentro do próprio dropdown chamam stopPropagation()
+     * no template, então nunca chegam até aqui.
+     */
+    @HostListener("document:click")
+    fecharFiltros(): void {
+        this.filtroAberto = null;
+    }
 
     async ngOnInit(): Promise<void> {
         this.mesSelecionado = this.obterMesAtual();
@@ -215,11 +229,15 @@ export class LancamentosComponent implements OnInit {
             return grupos.get(data)!;
         };
 
-        for (const lancamento of this.lancamentos) {
+        for (const lancamento of this.aplicarFiltros(this.lancamentos)) {
             garantirGrupo(lancamento.data).push({ ehFatura: false, lancamento });
         }
 
         for (const fatura of this.faturasDoMes) {
+            if (this.filtroOrigens.size && !this.filtroOrigens.has(`cartao:${fatura.cartao_id}`)) {
+                continue;
+            }
+
             garantirGrupo(fatura.data_vencimento).push({ ehFatura: true, fatura });
         }
 
@@ -230,6 +248,109 @@ export class LancamentosComponent implements OnInit {
                 dia: Number(data.split("-")[2]),
                 itens,
             }));
+    }
+
+    // =====================================================================
+    // FILTROS
+    // =====================================================================
+
+    private aplicarFiltros(lista: Lancamento[]): Lancamento[] {
+        return lista.filter((lancamento) => {
+            if (this.filtroTipos.size && !this.filtroTipos.has(lancamento.tipo)) {
+                return false;
+            }
+
+            if (this.filtroOrigens.size) {
+                const chave = lancamento.conta_id
+                    ? `conta:${lancamento.conta_id}`
+                    : lancamento.cartao_id
+                        ? `cartao:${lancamento.cartao_id}`
+                        : null;
+
+                if (!chave || !this.filtroOrigens.has(chave)) {
+                    return false;
+                }
+            }
+
+            if (
+                this.filtroCategorias.size &&
+                (!lancamento.categoria_id || !this.filtroCategorias.has(lancamento.categoria_id))
+            ) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    alternarFiltro(filtro: "tipo" | "origem" | "categoria"): void {
+        this.filtroAberto = this.filtroAberto === filtro ? null : filtro;
+    }
+
+    private alternarNoConjunto(conjunto: Set<string>, valor: string): void {
+        if (conjunto.has(valor)) {
+            conjunto.delete(valor);
+        } else {
+            conjunto.add(valor);
+        }
+
+        this.organizarPorDia();
+    }
+
+    alternarFiltroTipo(tipo: string): void {
+        this.alternarNoConjunto(this.filtroTipos, tipo);
+    }
+
+    alternarFiltroOrigem(chave: string): void {
+        this.alternarNoConjunto(this.filtroOrigens, chave);
+    }
+
+    alternarFiltroCategoria(categoriaId: string): void {
+        this.alternarNoConjunto(this.filtroCategorias, categoriaId);
+    }
+
+    temFiltrosAtivos(): boolean {
+        return (
+            this.filtroTipos.size > 0 ||
+            this.filtroOrigens.size > 0 ||
+            this.filtroCategorias.size > 0
+        );
+    }
+
+    limparFiltros(): void {
+        this.filtroTipos.clear();
+        this.filtroOrigens.clear();
+        this.filtroCategorias.clear();
+
+        this.organizarPorDia();
+    }
+
+    // =====================================================================
+    // SALDO / PREVISTO DO MÊS
+    // =====================================================================
+
+    /** Soma só do que já foi confirmado (pago/recebido) no mês. */
+    saldoMes(): number {
+        return this.lancamentos
+            .filter((lancamento) => Number(lancamento.confirmado) === 1)
+            .reduce(
+                (soma, lancamento) =>
+                    soma + (lancamento.tipo === "receita" ? lancamento.valor : -lancamento.valor),
+                0,
+            );
+    }
+
+    /** Soma de tudo (confirmado ou não) — resultado projetado do mês. */
+    previstoMes(): number {
+        return this.lancamentos.reduce(
+            (soma, lancamento) =>
+                soma + (lancamento.tipo === "receita" ? lancamento.valor : -lancamento.valor),
+            0,
+        );
+    }
+
+    valorComSinal(valor: number): string {
+        return `${valor < 0 ? "-" : ""}R$ ${this.valorFormatado(Math.abs(valor))}`;
     }
 
     async alterarMes(): Promise<void> {
@@ -454,47 +575,4 @@ export class LancamentosComponent implements OnInit {
         }
     }
 
-    // =====================================================================
-    // REMOÇÃO
-    // =====================================================================
-
-    /*
-     * Lançamento único: exclui direto.
-     * Lançamento de grupo (fixo ou parcelado): abre o modal perguntando
-     * o escopo (todos / atual e próximos / apenas atual).
-     */
-    remover(lancamento: Lancamento): void {
-        if (!lancamento.grupo_parcelamento_id) {
-            this.excluirComEscopo(lancamento.id, "atual");
-            return;
-        }
-
-        this.lancamentoParaExcluir = lancamento;
-        this.modalExcluirAberto = true;
-    }
-
-    fecharModalExcluir(): void {
-        this.modalExcluirAberto = false;
-        this.lancamentoParaExcluir = null;
-    }
-
-    async confirmarExclusao(escopo: EscopoEdicao): Promise<void> {
-        if (!this.lancamentoParaExcluir) return;
-
-        await this.excluirComEscopo(this.lancamentoParaExcluir.id, escopo);
-        this.fecharModalExcluir();
-    }
-
-    private async excluirComEscopo(
-        id: string,
-        escopo: EscopoEdicao,
-    ): Promise<void> {
-        try {
-            await this.db.excluirLancamentoComEscopo(id, escopo);
-            await this.carregarLancamentos();
-        } catch (erro) {
-            console.error("Erro ao excluir lançamento:", erro);
-            alert("Não foi possível excluir o lançamento.");
-        }
-    }
 }

@@ -88,6 +88,14 @@ export class CartoesComponent implements OnInit {
         }
 
         this.cartaoExpandido = cartaoId;
+
+        /*
+         * Antes de mostrar a lista, verifica se alguma fatura ficou "presa"
+         * em aberto sem nenhum lançamento nem saldo pendente (ex.: usuário
+         * apagou todos os lançamentos daquele mês) e corrige o status.
+         */
+        await this.db.verificarFaturasDoCartao(cartaoId);
+
         await this.carregarFaturas(cartaoId);
     }
 

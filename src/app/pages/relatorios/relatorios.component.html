@@ -1,11 +1,37 @@
 <div class="relatorios-page">
 
-    <!-- CABEÇALHO -->
+    <!-- TÍTULO -->
 
     <div class="cabecalho">
         <h2>Relatórios</h2>
+    </div>
 
-        <div class="navegador-periodo">
+
+    <!-- ABAS -->
+
+    <div class="abas">
+        <button class="aba" [class.ativa]="abaAtiva === 'categorias'" (click)="selecionarAba('categorias')">
+            Categorias
+        </button>
+        <button class="aba" [class.ativa]="abaAtiva === 'entradas-saidas'" (click)="selecionarAba('entradas-saidas')">
+            Evolução Anual
+        </button>
+        <button class="aba" [class.ativa]="abaAtiva === 'contas'" (click)="selecionarAba('contas')">
+            Contas
+        </button>
+        <button class="aba" [class.ativa]="abaAtiva === 'tags'" (click)="selecionarAba('tags')">
+            Tags
+        </button>
+    </div>
+
+
+    <!-- SELEÇÃO DE DATA (centralizada — cada aba tem a sua própria) -->
+
+    <div class="seletor-data">
+
+        <!-- CATEGORIAS: período livre (hoje/semana/mês/.../personalizado) -->
+
+        <div class="navegador-periodo" *ngIf="abaAtiva === 'categorias'">
             <button class="seta" [disabled]="!podeNavegar()" (click)="navegarPeriodo(-1)">
                 <span class="material-icons">chevron_left</span>
             </button>
@@ -45,24 +71,21 @@
                 <span class="material-icons">chevron_right</span>
             </button>
         </div>
-    </div>
 
+        <!-- ENTRADAS X SAÍDAS: navegador de ano -->
 
-    <!-- ABAS -->
+        <div class="navegador-ano" *ngIf="abaAtiva === 'entradas-saidas'">
+            <button class="seta" (click)="anoEvolucaoAnterior()">
+                <span class="material-icons">chevron_left</span>
+            </button>
 
-    <div class="abas">
-        <button class="aba" [class.ativa]="abaAtiva === 'categorias'" (click)="selecionarAba('categorias')">
-            Categorias
-        </button>
-        <button class="aba" [class.ativa]="abaAtiva === 'entradas-saidas'" (click)="selecionarAba('entradas-saidas')">
-            Entradas x Saídas
-        </button>
-        <button class="aba" [class.ativa]="abaAtiva === 'contas'" (click)="selecionarAba('contas')">
-            Contas
-        </button>
-        <button class="aba" [class.ativa]="abaAtiva === 'tags'" (click)="selecionarAba('tags')">
-            Tags
-        </button>
+            <strong>{{ anoEvolucao }}</strong>
+
+            <button class="seta" (click)="anoEvolucaoProximo()">
+                <span class="material-icons">chevron_right</span>
+            </button>
+        </div>
+
     </div>
 
 
@@ -249,18 +272,6 @@
             </div>
 
             <div class="acoes-direita">
-                <div class="navegador-ano">
-                    <button class="seta" (click)="anoEvolucaoAnterior()">
-                        <span class="material-icons">chevron_left</span>
-                    </button>
-
-                    <strong>{{ anoEvolucao }}</strong>
-
-                    <button class="seta" (click)="anoEvolucaoProximo()">
-                        <span class="material-icons">chevron_right</span>
-                    </button>
-                </div>
-
                 <button class="btn-filtros" title="Em breve" disabled>
                     <span class="material-icons">file_download</span>
                     Exportar
@@ -393,16 +404,6 @@
             </div>
         </div>
 
-    </div>
-
-
-    <!-- OUTRAS ABAS: ainda não implementadas nessa primeira versão -->
-
-    <div class="conteudo-aba placeholder"
-        [hidden]="abaAtiva === 'categorias' || abaAtiva === 'entradas-saidas'">
-        <span class="material-icons">construction</span>
-        <strong>Esse relatório ainda não foi implementado</strong>
-        <span>Em breve!</span>
     </div>
 
 </div>

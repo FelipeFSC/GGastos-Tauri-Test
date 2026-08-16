@@ -69,7 +69,87 @@
         <!-- FILTROS -->
         <!-- ================================================= -->
 
-        <div class="filters-area"></div>
+        <div class="filtros-bar">
+            <div class="filtro-dropdown">
+                <button type="button" class="filtro-trigger" [class.ativo]="filtroTipos.size > 0"
+                    (click)="alternarFiltro('tipo'); $event.stopPropagation()">
+                    Tipo
+                    <span *ngIf="filtroTipos.size" class="filtro-contador">{{ filtroTipos.size }}</span>
+                    <span class="material-icons">expand_more</span>
+                </button>
+
+                <div class="filtro-painel" *ngIf="filtroAberto === 'tipo'" (click)="$event.stopPropagation()">
+                    <label class="filtro-opcao">
+                        <input type="checkbox" [checked]="filtroTipos.has('receita')"
+                            (change)="alternarFiltroTipo('receita')" />
+                        Receita
+                    </label>
+
+                    <label class="filtro-opcao">
+                        <input type="checkbox" [checked]="filtroTipos.has('despesa')"
+                            (change)="alternarFiltroTipo('despesa')" />
+                        Despesa
+                    </label>
+                </div>
+            </div>
+
+            <div class="filtro-dropdown">
+                <button type="button" class="filtro-trigger" [class.ativo]="filtroOrigens.size > 0"
+                    (click)="alternarFiltro('origem'); $event.stopPropagation()">
+                    Contas &amp; Cartões
+                    <span *ngIf="filtroOrigens.size" class="filtro-contador">{{ filtroOrigens.size }}</span>
+                    <span class="material-icons">expand_more</span>
+                </button>
+
+                <div class="filtro-painel" *ngIf="filtroAberto === 'origem'" (click)="$event.stopPropagation()">
+                    <span class="filtro-grupo-titulo" *ngIf="contas.length">Contas</span>
+
+                    <label class="filtro-opcao" *ngFor="let conta of contas">
+                        <input type="checkbox" [checked]="filtroOrigens.has('conta:' + conta.id)"
+                            (change)="alternarFiltroOrigem('conta:' + conta.id)" />
+                        {{ conta.nome }}
+                    </label>
+
+                    <span class="filtro-grupo-titulo" *ngIf="cartoes.length">Cartões</span>
+
+                    <label class="filtro-opcao" *ngFor="let cartao of cartoes">
+                        <input type="checkbox" [checked]="filtroOrigens.has('cartao:' + cartao.id)"
+                            (change)="alternarFiltroOrigem('cartao:' + cartao.id)" />
+                        {{ cartao.nome }}
+                    </label>
+                </div>
+            </div>
+
+            <div class="filtro-dropdown">
+                <button type="button" class="filtro-trigger" [class.ativo]="filtroCategorias.size > 0"
+                    (click)="alternarFiltro('categoria'); $event.stopPropagation()">
+                    Categorias
+                    <span *ngIf="filtroCategorias.size" class="filtro-contador">{{ filtroCategorias.size }}</span>
+                    <span class="material-icons">expand_more</span>
+                </button>
+
+                <div class="filtro-painel" *ngIf="filtroAberto === 'categoria'" (click)="$event.stopPropagation()">
+                    <ng-container *ngFor="let categoria of categoriasPrincipais">
+                        <label class="filtro-opcao">
+                            <input type="checkbox" [checked]="filtroCategorias.has(categoria.id)"
+                                (change)="alternarFiltroCategoria(categoria.id)" />
+                            {{ categoria.nome }}
+                        </label>
+
+                        <label class="filtro-opcao filtro-opcao-sub" *ngFor="let subcategoria of subcategoriasDa(categoria.id)">
+                            <input type="checkbox" [checked]="filtroCategorias.has(subcategoria.id)"
+                                (change)="alternarFiltroCategoria(subcategoria.id)" />
+                            {{ subcategoria.nome }}
+                        </label>
+                    </ng-container>
+                </div>
+            </div>
+
+            <button type="button" class="filtro-limpar" *ngIf="temFiltrosAtivos()" (click)="limparFiltros()">
+                <span class="material-icons">close</span>
+                Limpar filtros
+            </button>
+        </div>
 
         <!-- ================================================= -->
         <!-- LISTAGEM -->
@@ -125,127 +205,125 @@
                             <span class="fatura-badge">
                                 <span class="material-icons"> chevron_right </span>
                             </span>
-
-                            <div class="lancamento-actions"></div>
                         </a>
 
                         <!-- ===================================== -->
                         <!-- LANÇAMENTO NORMAL -->
                         <!-- ===================================== -->
 
-                        <div class="lancamento-row" *ngIf="!item.ehFatura">
-                        <!-- CATEGORIA -->
+                        <div class="lancamento-row" *ngIf="!item.ehFatura" (click)="modal.abrirEdicao(item.lancamento!)">
+                            <!-- CATEGORIA -->
 
-                        <div class="category-icon" [style.background]="corCategoria(item.lancamento!)" [title]="nomeCategoria(item.lancamento!)">
-                            <span class="material-icons">
-                                {{ iconeCategoria(item.lancamento!) }}
-                            </span>
-                        </div>
-
-                        <!-- DESCRIÇÃO -->
-
-                        <div class="lancamento-description">
-                            <strong>
-                                {{ item.lancamento!.descricao || "Sem descrição" }}
-                            </strong>
-
-                            <span class="category-name">
-                                {{ nomeCategoria(item.lancamento!) }}
-                            </span>
-                        </div>
-
-                        <!-- INDICADORES -->
-
-                        <div class="lancamento-indicators">
-                            <span *ngIf="ehFixo(item.lancamento!)" class="indicator" title="Lançamento fixo (recorrente)">
-                                <span class="material-icons"> repeat </span>
-                            </span>
-
-                            <span *ngIf="ehParcelado(item.lancamento!)" class="indicator" [title]="'Parcela ' + textoParcela(item.lancamento!)">
-                                <span class="material-icons"> receipt_long </span>
-
-                                <small>
-                                    {{ textoParcela(item.lancamento!) }}
-                                </small>
-                            </span>
-
-                            <span class="indicator obs-indicator" *ngIf="item.lancamento!.observacao">
-                                <span class="material-icons"> notes </span>
-
-                                <span class="obs-tooltip">
-                                    {{ item.lancamento!.observacao }}
+                            <div class="category-icon" [style.background]="corCategoria(item.lancamento!)" [title]="nomeCategoria(item.lancamento!)">
+                                <span class="material-icons">
+                                    {{ iconeCategoria(item.lancamento!) }}
                                 </span>
-                            </span>
+                            </div>
 
-                            <span class="indicator" *ngIf="tagsDoLancamento(item.lancamento!).length" [title]="tituloTags(item.lancamento!)">
-                                <span class="material-icons"> sell </span>
+                            <!-- DESCRIÇÃO -->
 
-                                <small *ngIf="tagsDoLancamento(item.lancamento!).length > 1">
-                                    {{ tagsDoLancamento(item.lancamento!).length }}
-                                </small>
-                            </span>
+                            <div class="lancamento-description">
+                                <strong>
+                                    {{ item.lancamento!.descricao || "Sem descrição" }}
+                                </strong>
 
-                            <span class="indicator" *ngIf="quantidadeAnexos(item.lancamento!) > 0"
-                                [title]="quantidadeAnexos(item.lancamento!) + ' anexo(s)'">
-                                <span class="material-icons"> attach_file </span>
+                                <span class="category-name">
+                                    {{ nomeCategoria(item.lancamento!) }}
+                                </span>
+                            </div>
 
-                                <small *ngIf="quantidadeAnexos(item.lancamento!) > 1">
-                                    {{ quantidadeAnexos(item.lancamento!) }}
-                                </small>
-                            </span>
+                            <!-- INDICADORES -->
 
-                            <span class="origin" [title]="nomeOrigem(item.lancamento!)">
-                                <span class="origin-icon" [style.color]="corOrigem(item.lancamento!)">
-                                    <span class="material-icons">
-                                        {{ iconeOrigem(item.lancamento!) }}
+                            <div class="lancamento-indicators">
+                                <span *ngIf="ehFixo(item.lancamento!)" class="indicator" title="Lançamento fixo (recorrente)">
+                                    <span class="material-icons"> repeat </span>
+                                </span>
+
+                                <span *ngIf="ehParcelado(item.lancamento!)" class="indicator" [title]="'Parcela ' + textoParcela(item.lancamento!)">
+                                    <span class="material-icons"> receipt_long </span>
+
+                                    <small>
+                                        {{ textoParcela(item.lancamento!) }}
+                                    </small>
+                                </span>
+
+                                <span class="indicator obs-indicator" *ngIf="item.lancamento!.observacao">
+                                    <span class="material-icons"> notes </span>
+
+                                    <span class="obs-tooltip">
+                                        {{ item.lancamento!.observacao }}
                                     </span>
                                 </span>
 
-                                <span class="origin-name">
-                                    {{ nomeOrigem(item.lancamento!) }}
+                                <span class="indicator" *ngIf="tagsDoLancamento(item.lancamento!).length" [title]="tituloTags(item.lancamento!)">
+                                    <span class="material-icons"> sell </span>
+
+                                    <small *ngIf="tagsDoLancamento(item.lancamento!).length > 1">
+                                        {{ tagsDoLancamento(item.lancamento!).length }}
+                                    </small>
                                 </span>
-                            </span>
-                        </div>
 
-                        <!-- VALOR -->
+                                <span class="indicator" *ngIf="quantidadeAnexos(item.lancamento!) > 0"
+                                    [title]="quantidadeAnexos(item.lancamento!) + ' anexo(s)'">
+                                    <span class="material-icons"> attach_file </span>
 
-                        <div class="lancamento-value" [class.valor-receita]="item.lancamento!.tipo === 'receita'"
-                            [class.valor-despesa]="item.lancamento!.tipo === 'despesa'">
-                            <span>
-                                {{ item.lancamento!.tipo === "receita" ? "+" : "-" }}
-                                R$ {{ valorFormatado(item.lancamento!.valor) }}
-                            </span>
-                        </div>
+                                    <small *ngIf="quantidadeAnexos(item.lancamento!) > 1">
+                                        {{ quantidadeAnexos(item.lancamento!) }}
+                                    </small>
+                                </span>
 
-                        <!-- JOIA -->
+                                <span class="origin" [title]="nomeOrigem(item.lancamento!)">
+                                    <span class="origin-icon" [style.color]="corOrigem(item.lancamento!)">
+                                        <span class="material-icons">
+                                            {{ iconeOrigem(item.lancamento!) }}
+                                        </span>
+                                    </span>
 
-                        <button type="button" class="lancamento-jewel" [class.confirmado]="+item.lancamento!.confirmado === 1" [title]="
-                +item.lancamento!.confirmado === 1
-                  ? 'Confirmado — clique para desmarcar'
-                  : 'Marcar como pago/recebido'
-              " (click)="alternarConfirmado(item.lancamento!)">
-                            <span class="material-icons">
-                                {{
-                                +item.lancamento!.confirmado === 1
-                                ? "check_circle"
-                                : "radio_button_unchecked"
-                                }}
-                            </span>
-                        </button>
+                                    <span class="origin-name">
+                                        {{ nomeOrigem(item.lancamento!) }}
+                                    </span>
+                                </span>
+                            </div>
 
-                        <!-- AÇÕES -->
+                            <!-- VALOR -->
 
-                        <div class="lancamento-actions">
-                            <button type="button" class="btn-row-action" title="Editar" (click)="modal.abrirEdicao(item.lancamento!)">
-                                <span class="material-icons"> edit </span>
+                            <div class="lancamento-value" [class.valor-receita]="item.lancamento!.tipo === 'receita'"
+                                [class.valor-despesa]="item.lancamento!.tipo === 'despesa'">
+                                <span>
+                                    {{ item.lancamento!.tipo === "receita" ? "+" : "-" }}
+                                    R$ {{ valorFormatado(item.lancamento!.valor) }}
+                                </span>
+                            </div>
+
+                            <!-- JOIA -->
+
+                            <button type="button" class="lancamento-jewel" [class.confirmado]="+item.lancamento!.confirmado === 1" [title]="
+                    +item.lancamento!.confirmado === 1
+                      ? 'Confirmado — clique para desmarcar'
+                      : 'Marcar como pago/recebido'
+                  " (click)="$event.stopPropagation(); alternarConfirmado(item.lancamento!)">
+                                <span class="material-icons">thumb_up</span>
                             </button>
-
-                            <button type="button" class="btn-row-action delete" title="Excluir" (click)="remover(item.lancamento!)">
-                                <span class="material-icons"> delete </span>
-                            </button>
-                        </div>
                         </div>
                     </ng-container>
+                </div>
+            </div>
+
+            <!-- SALDO / PREVISTO -->
+
+            <div class="resumo-mes" *ngIf="gruposLancamentos.length">
+                <div class="resumo-item">
+                    <span>Saldo</span>
+                    <strong [class.positivo]="saldoMes() >= 0" [class.negativo]="saldoMes() < 0">
+                        {{ valorComSinal(saldoMes()) }}
+                    </strong>
+                </div>
+
+                <div class="resumo-item">
+                    <span>Previsto</span>
+                    <strong [class.positivo]="previstoMes() >= 0" [class.negativo]="previstoMes() < 0">
+                        {{ valorComSinal(previstoMes()) }}
+                    </strong>
                 </div>
             </div>
 
@@ -268,50 +346,4 @@
 <!-- MODAL (criar/editar lançamento) -->
 <!-- ===================================================== -->
 
-<app-lancamento-modal #modal (salvo)="carregarLancamentos()"></app-lancamento-modal>
-
-<!-- ===================================================== -->
-<!-- MODAL DE EXCLUSÃO (lançamento de grupo) -->
-<!-- ===================================================== -->
-
-<div class="modal-overlay" *ngIf="modalExcluirAberto" (click)="fecharModalExcluir()">
-    <div class="modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-            <div>
-                <h2>Excluir lançamento</h2>
-                <p>
-                    Este lançamento faz parte de uma repetição. O que você quer excluir?
-                </p>
-            </div>
-
-            <button type="button" class="modal-close" (click)="fecharModalExcluir()" title="Fechar">
-                <span class="material-icons">close</span>
-            </button>
-        </div>
-
-        <div class="modal-body">
-            <div class="repeat-options scope-options">
-                <button type="button" (click)="confirmarExclusao('todos')">
-                    <strong>Excluir todos</strong>
-                    <span>Passadas e futuras</span>
-                </button>
-
-                <button type="button" (click)="confirmarExclusao('atual_e_proximos')">
-                    <strong>Excluir o atual e os próximos</strong>
-                    <span>A partir desta ocorrência</span>
-                </button>
-
-                <button type="button" (click)="confirmarExclusao('atual')">
-                    <strong>Excluir apenas o atual</strong>
-                    <span>Só esta ocorrência</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-cancel" (click)="fecharModalExcluir()">
-                Cancelar
-            </button>
-        </div>
-    </div>
-</div>
+<app-lancamento-modal #modal (salvo)="carregarLancamentos()" (excluido)="carregarLancamentos()"></app-lancamento-modal>

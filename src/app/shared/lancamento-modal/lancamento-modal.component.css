@@ -272,6 +272,21 @@
     color: white;
 }
 
+.confirmado-toggle.active {
+    background: #eafaf0;
+    color: #2f9e44;
+}
+
+.confirmado-toggle .material-icons {
+    display: inline-block;
+    transition: transform 0.35s ease;
+    transform: rotateX(180deg);
+}
+
+.confirmado-toggle.active .material-icons {
+    transform: rotateX(0deg);
+}
+
 /* ================================================= */
 /* OBSERVAÇÃO */
 /* ================================================= */
@@ -862,78 +877,68 @@
 /* ================================================= */
 
 .modal-footer {
-    padding: 16px 24px;
+    padding: 20px 24px;
 
     border-top: 1px solid #edf0f3;
 
     display: flex;
 
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: center;
 
-    gap: 8px;
+    gap: 20px;
 }
 
-.btn-cancel,
+.btn-delete,
 .btn-save {
-    height: 40px;
+    width: 56px;
+    height: 56px;
 
-    padding: 0 16px;
+    border: none;
+    border-radius: 50%;
 
-    border-radius: 8px;
+    color: white;
 
     cursor: pointer;
 
-    font-size: 13px;
-
-    font-weight: 600;
-
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
-    gap: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    transition: filter 0.15s, transform 0.15s;
 }
 
-.btn-cancel {
-    border: 1px solid #dfe3e8;
-
-    background: white;
-
-    color: #6b7280;
+.btn-delete:hover,
+.btn-save:hover {
+    filter: brightness(0.92);
+    transform: translateY(-1px);
 }
 
-.btn-cancel:hover {
-    background: #f5f6f8;
+.btn-delete:disabled,
+.btn-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    filter: none;
+}
+
+.btn-delete .material-icons,
+.btn-save .material-icons {
+    font-size: 24px;
+}
+
+.btn-delete {
+    background: #d93025;
 }
 
 .btn-save {
-    border: none;
-
     background: #3c7a3c;
-
-    color: white;
 }
 
 .btn-save.expense {
     background: #4285f4;
-}
-
-.btn-save:hover {
-    filter: brightness(0.92);
-}
-
-.btn-save:disabled {
-    opacity: 0.65;
-
-    cursor: not-allowed;
-
-    filter: none;
-}
-
-.btn-save .material-icons {
-    font-size: 18px;
 }
 
 /* ================================================= */

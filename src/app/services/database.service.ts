@@ -1706,13 +1706,19 @@ export class DatabaseService {
    * O "saldo mês anterior" nunca é guardado no banco — é sempre recalculado
    * a partir do histórico de pagamentos, então editar/excluir um pagamento
    * antigo já reflete automaticamente nas faturas seguintes.
+   *
+   * Uma fatura só empurra o que falta pra fatura seguinte depois que a
+   * PRÓPRIA data de vencimento passa sem pagamento total — antes disso, o
+   * valor em aberto é só "desta fatura", ainda não é dívida herdada. Sem
+   * essa checagem, uma fatura nunca paga carregaria o mesmo valor pra
+   * todos os meses seguintes do ano, mesmo antes de vencer.
    */
   private async calcularSaldosDoCartao(
     cartaoId: string
   ): Promise<Map<string, SaldoFatura>> {
     const faturas = await this.db.select(
       `
-      SELECT id
+      SELECT id, data_vencimento
       FROM faturas
       WHERE cartao_id = ?
       ORDER BY ano_referencia ASC, mes_referencia ASC
@@ -1721,6 +1727,8 @@ export class DatabaseService {
     );
 
     const resultado = new Map<string, SaldoFatura>();
+
+    const hoje = this.formatarData(new Date());
 
     let saldoAnterior = 0;
 
@@ -1749,7 +1757,9 @@ export class DatabaseService {
         valorRestante,
       });
 
-      saldoAnterior = valorRestante;
+      const venceu = fatura.data_vencimento < hoje;
+
+      saldoAnterior = venceu ? valorRestante : 0;
     }
 
     return resultado;
@@ -1803,6 +1813,78 @@ export class DatabaseService {
       `UPDATE faturas SET status = ? WHERE id = ?`,
       [status, faturaId]
     );
+  }
+
+  /**
+   * "Trigger" de verificação das faturas de um cartão — chamada nos
+   * pontos em que lançamentos de cartão podem ter mudado (cadastrar,
+   * editar ou excluir um lançamento; abrir a lista de faturas), pra
+   * manter status/existência das faturas coerentes com a realidade.
+   *
+   * Sem isso, `faturas.status` fica com o valor gravado na última vez
+   * que algo mexeu nele diretamente (só os fluxos de pagamento fazem
+   * isso hoje) — se o usuário excluir todos os lançamentos de uma
+   * fatura, por exemplo, ela continua marcada como "aberta" mesmo sem
+   * nenhum valor pendente.
+   *
+   * - Fatura sem nenhum lançamento próprio, sem saldo herdado do mês
+   *   anterior e sem pagamento registrado: nunca chegou a existir de
+   *   verdade pro usuário (sobrou de uma compra criada e depois
+   *   apagada) — é removida.
+   * - Toda fatura restante: status recalculado a partir do saldo real
+   *   (mesma regra de `recalcularStatusFatura`).
+   */
+  async verificarFaturasDoCartao(cartaoId: string): Promise<void> {
+    await this.init();
+
+    const faturas = await this.db.select(
+      `
+      SELECT id
+      FROM faturas
+      WHERE cartao_id = ?
+      ORDER BY ano_referencia ASC, mes_referencia ASC
+      `,
+      [cartaoId]
+    );
+
+    if (!faturas.length) {
+      return;
+    }
+
+    const saldos = await this.calcularSaldosDoCartao(cartaoId);
+
+    for (const fatura of faturas) {
+      const saldo = saldos.get(fatura.id);
+
+      if (!saldo) {
+        continue;
+      }
+
+      if (saldo.valorTotal <= 0 && saldo.faturaAtual === 0) {
+        const pagamentos = await this.db.select(
+          `SELECT COUNT(*) AS total FROM faturas_pagamentos WHERE fatura_id = ?`,
+          [fatura.id]
+        );
+
+        if (Number(pagamentos[0]?.total ?? 0) === 0) {
+          await this.db.execute(`DELETE FROM faturas WHERE id = ?`, [
+            fatura.id,
+          ]);
+
+          continue;
+        }
+      }
+
+      const status =
+        saldo.valorTotal > 0 && saldo.valorRestante <= 0.01
+          ? "paga"
+          : "aberta";
+
+      await this.db.execute(`UPDATE faturas SET status = ? WHERE id = ?`, [
+        status,
+        fatura.id,
+      ]);
+    }
   }
 
   // =====================================================================

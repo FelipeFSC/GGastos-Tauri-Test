@@ -10,6 +10,8 @@ interface Categoria {
   id: string;
   nome: string;
   tipo: string;
+  icone: string | null;
+  cor: string | null;
   categoria_pai_id: string | null;
 }
 
@@ -50,7 +52,7 @@ export class LimitesComponent implements OnInit {
 
   async carregar() {
     this.categorias = await this.db.query<Categoria>(
-      "SELECT id, nome, tipo, categoria_pai_id FROM categorias ORDER BY nome"
+      "SELECT id, nome, tipo, icone, cor, categoria_pai_id FROM categorias ORDER BY nome"
     );
 
     // No formulário só faz sentido escolher a categoria "mãe": o gasto de
@@ -112,6 +114,20 @@ export class LimitesComponent implements OnInit {
   nomeCategoria(id: string): string {
     return (
       this.categorias.find((categoria) => categoria.id === id)?.nome ?? "-"
+    );
+  }
+
+  iconeCategoria(id: string): string {
+    return (
+      this.categorias.find((categoria) => categoria.id === id)?.icone ||
+      "category"
+    );
+  }
+
+  corCategoria(id: string): string {
+    return (
+      this.categorias.find((categoria) => categoria.id === id)?.cor ||
+      "#4285f4"
     );
   }
 

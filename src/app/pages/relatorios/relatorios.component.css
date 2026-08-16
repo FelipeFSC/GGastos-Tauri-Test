@@ -6,13 +6,10 @@
 
 
 /* ================================================= */
-/* CABEÇALHO + NAVEGADOR DE PERÍODO */
+/* CABEÇALHO */
 /* ================================================= */
 
 .cabecalho {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   margin-bottom: 20px;
 }
 
@@ -22,10 +19,28 @@
   font-weight: 700;
 }
 
-.navegador-periodo {
+/* ================================================= */
+/* SELEÇÃO DE DATA (centralizada, uma por aba) */
+/* ================================================= */
+
+.seletor-data {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.navegador-periodo,
+.navegador-ano {
   display: flex;
   align-items: center;
   gap: 4px;
+
+  height: 40px;
+  padding: 0 6px;
+
+  border: 1px solid #e2e5ea;
+  border-radius: 10px;
+  background: #fff;
 }
 
 .seta {
@@ -57,12 +72,14 @@
 .rotulo-periodo {
   border: none;
   background: transparent;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #202124;
   cursor: pointer;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 8px;
+  min-width: 96px;
+  text-align: center;
 }
 
 .rotulo-periodo:hover {
@@ -471,22 +488,12 @@
   color: #9ca3af;
 }
 
-.navegador-ano {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-
-  height: 34px;
-  padding: 0 4px;
-
-  border: 1px solid #e2e5ea;
-  border-radius: 8px;
-}
-
 .navegador-ano strong {
-  min-width: 40px;
+  min-width: 96px;
   text-align: center;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #202124;
 }
 
 .cards-evolucao {

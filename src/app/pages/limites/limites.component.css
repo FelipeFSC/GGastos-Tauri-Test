@@ -367,11 +367,11 @@
 .category-icon {
   width: 40px;
   height: 40px;
+  flex-shrink: 0;
 
   border-radius: 10px;
 
-  background: #eef4ff;
-  color: #4285f4;
+  color: #fff;
 
   display: flex;
   align-items: center;
