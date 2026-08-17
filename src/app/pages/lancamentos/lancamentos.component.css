@@ -236,9 +236,12 @@
 /* MAIS */
 /* ================================================= */
 
-.btn-more {
+.more-wrapper {
+    position: relative;
     justify-self: end;
+}
 
+.btn-more {
     width: 44px;
     height: 44px;
 
@@ -259,6 +262,82 @@
 .btn-more:hover {
     background: #f5f7fa;
     color: #202124;
+}
+
+.more-menu {
+    position: absolute;
+
+    top: calc(100% + 8px);
+    right: 0;
+
+    width: 210px;
+
+    padding: 6px;
+
+    background: white;
+
+    border: 1px solid #e4e7eb;
+    border-radius: 11px;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+    z-index: 50;
+}
+
+.more-option {
+    width: 100%;
+    box-sizing: border-box;
+
+    border: none;
+    background: transparent;
+
+    padding: 10px;
+
+    border-radius: 8px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    text-align: left;
+    text-decoration: none;
+
+    cursor: pointer;
+}
+
+.more-option:hover {
+    background: #f7f8fa;
+}
+
+.more-option>.material-icons {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 8px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #eef4ff;
+    color: #4285f4;
+}
+
+.more-option div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.more-option strong {
+    font-size: 13px;
+    color: #30343b;
+}
+
+.more-option small {
+    font-size: 11px;
+    color: #9ca3af;
 }
 
 /* ================================================= */

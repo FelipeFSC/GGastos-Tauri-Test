@@ -60,9 +60,31 @@
 
             <!-- MAIS -->
 
-            <button type="button" class="btn-more" title="Mais opções">
-                <span class="material-icons"> more_vert </span>
-            </button>
+            <div class="more-wrapper">
+                <button type="button" class="btn-more" (click)="toggleMenuMais()" title="Mais opções">
+                    <span class="material-icons"> more_vert </span>
+                </button>
+
+                <div class="more-menu" *ngIf="menuMaisAberto">
+                    <a routerLink="/importar-csv/cartao" class="more-option" (click)="menuMaisAberto = false">
+                        <span class="material-icons"> credit_card </span>
+
+                        <div>
+                            <strong>Importar extrato</strong>
+                            <small>Cartão</small>
+                        </div>
+                    </a>
+
+                    <a routerLink="/importar-csv/banco" class="more-option" (click)="menuMaisAberto = false">
+                        <span class="material-icons"> account_balance </span>
+
+                        <div>
+                            <strong>Importar extrato</strong>
+                            <small>Banco</small>
+                        </div>
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- ================================================= -->

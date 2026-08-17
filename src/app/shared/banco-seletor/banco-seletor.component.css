@@ -1,0 +1,79 @@
+.banco-seletor {
+    padding: 8px 0 4px;
+}
+
+.banco-seletor-titulo {
+    margin: 0 0 14px;
+
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+
+    color: #9ca3af;
+}
+
+.banco-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.banco-card {
+    padding: 16px 12px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 8px;
+
+    border: 1px solid #e5e8ec;
+    border-radius: 12px;
+
+    background: white;
+
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+.banco-card:hover:not(:disabled) {
+    border-color: #b9c6f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+.banco-card.indisponivel {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.banco-icone {
+    width: 44px;
+    height: 44px;
+
+    border-radius: 12px;
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.banco-icone .material-icons {
+    font-size: 22px;
+}
+
+.banco-card strong {
+    font-size: 13px;
+    color: #30343b;
+}
+
+.banco-card small {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #9ca3af;
+}

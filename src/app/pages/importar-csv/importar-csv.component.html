@@ -1,0 +1,296 @@
+<div class="importar-page">
+    <div class="importar-container">
+
+        <!-- ================================================= -->
+        <!-- CABEÇALHO -->
+        <!-- ================================================= -->
+
+        <div class="card importar-header-card">
+            <div class="importar-nav">
+                <a routerLink="/lancamentos" class="nav-arrow" title="Voltar para Lançamentos">
+                    <span class="material-icons"> arrow_back </span>
+                </a>
+
+                <div class="importar-titulo-bloco">
+                    <h1>Importar extrato <strong>{{ tipoExtrato === "banco" ? "Banco" : "Cartão" }}</strong></h1>
+                    <p *ngIf="!bancoSelecionado">Selecione o banco pra continuar.</p>
+                    <p *ngIf="bancoSelecionado">
+                        Suba o extrato {{ tipoExtrato === "banco" ? "da conta" : "do cartão" }} pra conferir os
+                        lançamentos.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================= -->
+        <!-- BANCO -->
+        <!-- ================================================= -->
+
+        <div class="card" *ngIf="!bancoSelecionado">
+            <app-banco-seletor (selecionado)="bancoSelecionado = $event"></app-banco-seletor>
+        </div>
+
+        <ng-container *ngIf="bancoSelecionado">
+
+        <!-- ================================================= -->
+        <!-- UPLOAD -->
+        <!-- ================================================= -->
+
+        <div class="card upload-card">
+            <div class="dropzone" [class.arrastando]="arrastando" (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)" (drop)="onDrop($event)" (click)="inputArquivo.click()">
+                <span class="material-icons"> upload_file </span>
+
+                <strong> Clique ou arraste o arquivo CSV aqui </strong>
+
+                <span *ngIf="tipoExtrato === 'banco'"> Formato esperado: Data, Valor, Identificador, Descrição </span>
+                <span *ngIf="tipoExtrato !== 'banco'"> Formato esperado: date, title, amount </span>
+
+                <input #inputArquivo type="file" accept=".csv" hidden (change)="onArquivoSelecionado($event)" />
+            </div>
+
+            <p class="arquivo-atual" *ngIf="nomeArquivo && !erro">
+                <span class="material-icons"> description </span>
+                {{ nomeArquivo }}
+            </p>
+
+            <p class="erro-upload" *ngIf="erro">
+                <span class="material-icons"> error_outline </span>
+                {{ erro }}
+            </p>
+
+            <p class="sucesso-upload" *ngIf="sucesso">
+                <span class="material-icons"> check_circle </span>
+                {{ sucesso }}
+                <a routerLink="/lancamentos">Ver lançamentos</a>
+            </p>
+        </div>
+
+        <!-- ================================================= -->
+        <!-- LANÇAMENTOS ENCONTRADOS -->
+        <!-- ================================================= -->
+
+        <section class="card lancamentos-card" *ngIf="grupos.length">
+            <div class="preview-header">
+                <h3> Lançamentos encontrados </h3>
+
+                <span> {{ linhas.length }} lançamento(s) · R$ {{ valorFormatado(totalImportado) }} </span>
+            </div>
+
+            <div class="day-group" *ngFor="let grupo of grupos">
+                <div class="day-column">
+                    <span class="day-number">
+                        {{ grupo.dia }}
+                    </span>
+                </div>
+
+                <div class="day-list">
+                    <div class="lancamento-row" [class.pendente]="!linhaConfigurada(item)"
+                        [class.ja-importada]="item.jaImportada" *ngFor="let item of grupo.itens"
+                        (click)="abrirEdicaoLinha(item)">
+                        <div class="category-icon" [style.background]="item.jaImportada ? '#c5cad3' : corCategoria(item)">
+                            <span class="material-icons"> {{ item.jaImportada ? "task_alt" : iconeCategoria(item) }} </span>
+                        </div>
+
+                        <div class="lancamento-description">
+                            <strong>
+                                {{ item.descricao }}
+                            </strong>
+
+                            <span class="category-name" *ngIf="item.descricao !== item.tituloOriginal">
+                                {{ item.tituloOriginal }}
+                            </span>
+
+                            <span class="linha-tags">
+                                <span class="parcela-tag" *ngIf="item.parcelaTotalDetectada && !item.jaImportada">
+                                    <span class="material-icons">receipt_long</span>
+                                    {{ item.parcelaAtualDetectada }}/{{ item.parcelaTotalDetectada }}
+                                    {{ item.modoParcelamento === "parcelas" ? "· subindo série" : "· unitário" }}
+                                </span>
+
+                                <span class="ja-importada-tag" *ngIf="item.jaImportada">
+                                    <span class="material-icons">task_alt</span>
+                                    Parcela {{ item.parcelaAtualDetectada }}/{{ item.parcelaTotalDetectada }} ·
+                                    série já importada
+                                </span>
+
+                                <span class="pendente-tag" *ngIf="!linhaConfigurada(item)">
+                                    Falta configurar
+                                </span>
+                            </span>
+                        </div>
+
+                        <div class="lancamento-value" [class.valor-receita]="item.tipo === 'receita'"
+                            [class.valor-despesa]="item.tipo === 'despesa'">
+                            <span> {{ item.tipo === "receita" ? "+" : "-" }} R$ {{ valorFormatado(item.valor) }} </span>
+                        </div>
+
+                        <button type="button" class="btn-remover" title="Remover da lista"
+                            (click)="$event.stopPropagation(); removerLinha(item)">
+                            <span class="material-icons"> delete </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="exportar-bar">
+                <span class="exportar-info">
+                    {{ linhas.length }} lançamento(s)
+                    <span class="exportar-pendentes" *ngIf="pendentesCount() > 0">
+                        · {{ pendentesCount() }} sem configurar
+                    </span>
+                </span>
+
+                <button type="button" class="btn-exportar" (click)="exportarLancamentos()" [disabled]="exportando">
+                    <span class="material-icons"> cloud_upload </span>
+                    {{ exportando ? "Exportando..." : "Exportar lançamentos" }}
+                </button>
+            </div>
+        </section>
+
+        </ng-container>
+
+    </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- MODAL: CONFIGURAR LANÇAMENTO -->
+<!-- ===================================================== -->
+
+<div class="modal-overlay" *ngIf="linhaEmEdicao" (click)="fecharEdicaoLinha()">
+    <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <div>
+                <h2>Configurar lançamento</h2>
+                <p> {{ linhaEmEdicao.tituloOriginal }} </p>
+            </div>
+
+            <button type="button" class="modal-close" (click)="fecharEdicaoLinha()" title="Fechar">
+                <span class="material-icons"> close </span>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-group">
+                <label> Descrição </label>
+
+                <input type="text" [(ngModel)]="formEdicao.descricao" placeholder="Ex.: Mercado, iFood..." />
+            </div>
+
+            <div class="form-group">
+                <label> Categoria * </label>
+
+                <select [(ngModel)]="formEdicao.categoriaId">
+                    <option value="" disabled>Selecione uma categoria</option>
+
+                    <ng-container *ngFor="let categoria of categoriasPrincipais">
+                        <option [value]="categoria.id">
+                            {{ categoria.nome }}
+                        </option>
+
+                        <option *ngFor="let subcategoria of subcategoriasDa(categoria.id)"
+                            [value]="subcategoria.id">
+                            &nbsp;&nbsp;&nbsp;↳ {{ subcategoria.nome }}
+                        </option>
+                    </ng-container>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label> Conta / Cartão * </label>
+
+                <select [(ngModel)]="formEdicao.origem">
+                    <option value="" disabled>Selecione uma conta ou cartão</option>
+
+                    <optgroup label="Contas">
+                        <option *ngFor="let conta of contas" [value]="'conta:' + conta.id">
+                            {{ conta.nome }}
+                        </option>
+                    </optgroup>
+
+                    <optgroup label="Cartões">
+                        <option *ngFor="let cartao of cartoes" [value]="'cartao:' + cartao.id">
+                            {{ cartao.nome }}
+                        </option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- ================================================= -->
+            <!-- PARCELAMENTO DETECTADO -->
+            <!-- ================================================= -->
+
+            <div class="parcelamento-secao" *ngIf="linhaEmEdicao.parcelaTotalDetectada">
+                <p class="parcelamento-aviso">
+                    <span class="material-icons"> receipt_long </span>
+                    Foi identificado um item parcelado ({{ linhaEmEdicao.parcelaAtualDetectada }}/{{
+                    linhaEmEdicao.parcelaTotalDetectada }}). Deseja subir só esse lançamento ou todas as
+                    parcelas?
+                </p>
+
+                <div class="parcelamento-opcoes">
+                    <button type="button" [class.selecionado]="formEdicao.modoParcelamento === 'unitario'"
+                        (click)="formEdicao.modoParcelamento = 'unitario'">
+                        <strong>Unitário</strong>
+                        <span>Só esse lançamento, como veio no CSV</span>
+                    </button>
+
+                    <button type="button" [class.selecionado]="formEdicao.modoParcelamento === 'parcelas'"
+                        (click)="formEdicao.modoParcelamento = 'parcelas'">
+                        <strong>Subir parcelas</strong>
+                        <span>Cria a série inteira (anteriores como pagas)</span>
+                    </button>
+                </div>
+
+                <div class="parcelamento-campos" *ngIf="formEdicao.modoParcelamento === 'parcelas'">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label> Quantidade de parcelas </label>
+
+                            <input type="number" min="2" step="1" [(ngModel)]="formEdicao.quantidadeParcelas" />
+                        </div>
+
+                        <div class="form-group">
+                            <label> Parcela atual </label>
+
+                            <input type="number" min="1" [attr.max]="formEdicao.quantidadeParcelas" step="1"
+                                [(ngModel)]="formEdicao.parcelaAtual" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label> Valor total da compra </label>
+
+                        <div class="money-input">
+                            <span> R$ </span>
+                            <input type="number" min="0.01" step="0.01"
+                                [(ngModel)]="formEdicao.valorTotalParcelamento" />
+                        </div>
+                    </div>
+
+                    <p class="parcelamento-info">
+                        Parcelas 1 a {{ formEdicao.parcelaAtual - 1 }} entram como já pagas. Da parcela {{
+                        formEdicao.parcelaAtual }} em diante, como não pagas — igual a um lançamento normal.
+                    </p>
+                </div>
+            </div>
+
+            <p class="regra-info">
+                <span class="material-icons"> auto_awesome </span>
+                Essa configuração é lembrada — da próxima vez que "{{ linhaEmEdicao.chaveRegra }}" aparecer
+                num CSV, ela já vem preenchida.
+            </p>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="fecharEdicaoLinha()">
+                Cancelar
+            </button>
+
+            <button type="button" class="btn-save" (click)="salvarEdicaoLinha()">
+                <span class="material-icons"> check </span>
+                Salvar
+            </button>
+        </div>
+    </div>
+</div>

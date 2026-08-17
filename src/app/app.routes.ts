@@ -28,6 +28,28 @@ export const routes: Routes = [
         .then((m) => m.FaturaComponent),
   },
 
+  /*
+   * Não ficam no menu principal — só são acessíveis pelo botão "Mais
+   * opções" da tela de Lançamentos. Cartão e banco usam o MESMO
+   * componente (só o parser do CSV muda) — ver `tipoExtrato` em
+   * importar-csv.component.ts.
+   */
+  {
+    path: "importar-csv/cartao",
+    data: { tipoExtrato: "cartao" },
+    loadComponent: () =>
+      import("./pages/importar-csv/importar-csv.component")
+        .then((m) => m.ImportarCsvComponent),
+  },
+
+  {
+    path: "importar-csv/banco",
+    data: { tipoExtrato: "banco" },
+    loadComponent: () =>
+      import("./pages/importar-csv/importar-csv.component")
+        .then((m) => m.ImportarCsvComponent),
+  },
+
   {
     path: "relatorios",
     loadComponent: () =>

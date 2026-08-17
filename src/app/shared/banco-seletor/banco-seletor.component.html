@@ -1,0 +1,16 @@
+<div class="banco-seletor">
+    <p class="banco-seletor-titulo">Selecione o banco</p>
+
+    <div class="banco-grid">
+        <button type="button" class="banco-card" *ngFor="let banco of bancos" [class.indisponivel]="!banco.disponivel"
+            [disabled]="!banco.disponivel" (click)="escolher(banco)">
+            <span class="banco-icone" [style.background]="banco.cor">
+                <span class="material-icons"> {{ banco.icone }} </span>
+            </span>
+
+            <strong> {{ banco.nome }} </strong>
+
+            <small *ngIf="!banco.disponivel">Em breve</small>
+        </button>
+    </div>
+</div>

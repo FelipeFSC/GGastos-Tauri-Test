@@ -75,6 +75,7 @@ export class LancamentosComponent implements OnInit {
     mesSelecionado = "";
 
     menuAdicionarAberto = false;
+    menuMaisAberto = false;
 
     /** Qual dropdown de filtro está aberto no momento (só um por vez). */
     filtroAberto: "tipo" | "origem" | "categoria" | null = null;
@@ -406,6 +407,10 @@ export class LancamentosComponent implements OnInit {
 
     toggleMenuAdicionar(): void {
         this.menuAdicionarAberto = !this.menuAdicionarAberto;
+    }
+
+    toggleMenuMais(): void {
+        this.menuMaisAberto = !this.menuMaisAberto;
     }
 
     // =====================================================================

@@ -22,6 +22,25 @@ export interface FaturaRef {
   ano_referencia: number;
 }
 
+/**
+ * "Memória" da importação de CSV: guarda, por título original de linha
+ * de extrato (ex.: "99food *O Burgu S - Bu"), a última descrição/
+ * categoria/origem que o usuário escolheu — pra pré-preencher
+ * automaticamente da próxima vez que o mesmo título aparecer.
+ */
+export interface RegraImportacao {
+  id: string;
+  usuario_id: string;
+  titulo_original: string;
+  descricao: string | null;
+  categoria_id: string | null;
+  conta_id: string | null;
+  cartao_id: string | null;
+  /** Quantidade de parcelas da última série completa já enviada (null = nunca subiu uma série completa). */
+  serie_parcelas_total: number | null;
+  atualizado_em: string;
+}
+
 export interface PagamentoFatura {
   id: string;
   valor: number;
@@ -563,6 +582,53 @@ export class DatabaseService {
           ON DELETE CASCADE
       )
     `);
+
+    // -------------------------------------------------------------------
+    // REGRAS DE IMPORTAÇÃO (CSV)
+    // -------------------------------------------------------------------
+    // Uma linha por título original de extrato já configurado pelo
+    // usuário — usada pra pré-preencher descrição/categoria/origem
+    // quando o mesmo título aparecer numa importação futura.
+
+    await this.db.execute(`
+      CREATE TABLE IF NOT EXISTS regras_importacao (
+        id TEXT PRIMARY KEY,
+        usuario_id TEXT NOT NULL,
+        titulo_original TEXT NOT NULL,
+        descricao TEXT,
+        categoria_id TEXT,
+        conta_id TEXT,
+        cartao_id TEXT,
+
+        /*
+         * Quantidade de parcelas da última série completa já enviada
+         * pra esse título (null = nunca subiu uma série completa). Usado
+         * pra reconhecer, num CSV futuro, uma parcela que já foi
+         * importada por inteiro e não deve ser subida de novo.
+         */
+        serie_parcelas_total INTEGER,
+
+        atualizado_em TEXT NOT NULL,
+
+        UNIQUE (usuario_id, titulo_original),
+
+        FOREIGN KEY (usuario_id)
+          REFERENCES usuarios (id)
+          ON DELETE CASCADE,
+
+        FOREIGN KEY (categoria_id)
+          REFERENCES categorias (id)
+          ON DELETE SET NULL,
+
+        FOREIGN KEY (conta_id)
+          REFERENCES contas (id)
+          ON DELETE SET NULL,
+
+        FOREIGN KEY (cartao_id)
+          REFERENCES cartoes_credito (id)
+          ON DELETE SET NULL
+      )
+    `);
   }
 
   // =====================================================================
@@ -587,6 +653,8 @@ export class DatabaseService {
       ["lancamentos", "parcela_total INTEGER"],
       ["lancamentos", "grupo_parcelamento_id TEXT"],
       ["lancamentos", "observacao TEXT"],
+
+      ["regras_importacao", "serie_parcelas_total INTEGER"],
     ];
 
     for (const [tabela, colunaDef] of tentativas) {
@@ -673,6 +741,11 @@ export class DatabaseService {
     await this.db.execute(`
       CREATE INDEX IF NOT EXISTS idx_lancamentos_tags_lancamento
       ON lancamentos_tags(lancamento_id)
+    `);
+
+    await this.db.execute(`
+      CREATE INDEX IF NOT EXISTS idx_regras_importacao_usuario
+      ON regras_importacao(usuario_id)
     `);
   }
 
@@ -1105,6 +1178,108 @@ export class DatabaseService {
 
           parcela_atual: i + 1,
           parcela_total: parcelaTotal,
+
+          grupo_parcelamento_id: grupoId,
+        });
+
+        resultados.push(resultado);
+      }
+
+      await this.db.execute("COMMIT");
+
+      return resultados;
+    } catch (erro) {
+      await this.db.execute("ROLLBACK");
+      throw erro;
+    }
+  }
+
+  /**
+   * Cria uma série de parcelas ancorada numa parcela específica — usado
+   * pela importação de CSV, quando o extrato mostra, por exemplo, a
+   * parcela 6/12 de uma compra: `opcoes.data` é a data DESSA parcela, e
+   * as parcelas anteriores (1 a 5, nesse exemplo) são calculadas pra
+   * trás, mês a mês, e as seguintes (7 a 12) pra frente.
+   *
+   * As parcelas anteriores à parcela âncora nascem já confirmadas
+   * (pagas) — presume-se que, se o extrato já mostra a parcela 6, as
+   * parcelas 1 a 5 já venceram e foram cobradas. Da parcela âncora em
+   * diante, seguem como não confirmadas (comportamento normal).
+   */
+  async criarLancamentoParceladoAncorado(opcoes: {
+    categoria_id: string | null;
+    conta_id: string | null;
+    cartao_id: string | null;
+    tipo: TipoLancamento;
+    descricao: string | null;
+    /** Data da parcela informada em `parcela_atual` (não da parcela 1). */
+    data: string;
+    parcela_atual: number;
+    parcela_total: number;
+    valor_total: number;
+  }): Promise<LancamentoGerado[]> {
+    await this.init();
+
+    if (
+      !Number.isInteger(opcoes.parcela_total) ||
+      opcoes.parcela_total < 2
+    ) {
+      throw new Error("Quantidade de parcelas inválida.");
+    }
+
+    if (
+      !Number.isInteger(opcoes.parcela_atual) ||
+      opcoes.parcela_atual < 1 ||
+      opcoes.parcela_atual > opcoes.parcela_total
+    ) {
+      throw new Error("Parcela atual inválida.");
+    }
+
+    if (!Number.isFinite(opcoes.valor_total) || opcoes.valor_total <= 0) {
+      throw new Error("Valor total inválido.");
+    }
+
+    const valorBase =
+      Math.floor((opcoes.valor_total / opcoes.parcela_total) * 100) / 100;
+
+    const sobra =
+      Math.round((opcoes.valor_total - valorBase * opcoes.parcela_total) * 100) /
+      100;
+
+    const dataAncora = this.parseData(opcoes.data);
+    const grupoId = this.gerarId();
+
+    const resultados: LancamentoGerado[] = [];
+
+    await this.db.execute("BEGIN TRANSACTION");
+
+    try {
+      for (let numero = 1; numero <= opcoes.parcela_total; numero++) {
+        const deslocamento = numero - opcoes.parcela_atual;
+        const dataParcela = this.adicionarMeses(dataAncora, deslocamento);
+
+        const valor = numero === 1 ? valorBase + sobra : valorBase;
+
+        const resultado = await this.inserirLancamento({
+          usuario_id: USUARIO_LOCAL_ID,
+
+          categoria_id: opcoes.categoria_id,
+          conta_id: opcoes.conta_id,
+          cartao_id: opcoes.cartao_id,
+
+          tipo: opcoes.tipo,
+
+          descricao: opcoes.descricao,
+          valor,
+          data: this.formatarData(dataParcela),
+
+          confirmado: numero < opcoes.parcela_atual,
+
+          fixo: false,
+          frequencia: null,
+
+          parcela_atual: numero,
+          parcela_total: opcoes.parcela_total,
 
           grupo_parcelamento_id: grupoId,
         });
@@ -2923,5 +3098,141 @@ export class DatabaseService {
     await this.init();
 
     await this.db.execute(`DELETE FROM lancamentos_anexos WHERE id = ?`, [anexoId]);
+  }
+
+  // =====================================================================
+  // REGRAS DE IMPORTAÇÃO (CSV)
+  // =====================================================================
+
+  /**
+   * Todas as regras já configuradas pelo usuário, indexadas por título
+   * original — usado pra pré-preencher uma importação nova sem 1 query
+   * por linha do CSV.
+   */
+  async obterRegrasImportacao(): Promise<Record<string, RegraImportacao>> {
+    await this.init();
+
+    const linhas = await this.db.select(
+      `SELECT * FROM regras_importacao WHERE usuario_id = ?`,
+      [USUARIO_LOCAL_ID]
+    );
+
+    const resultado: Record<string, RegraImportacao> = {};
+
+    for (const linha of linhas as RegraImportacao[]) {
+      resultado[linha.titulo_original] = linha;
+    }
+
+    return resultado;
+  }
+
+  /**
+   * Grava (ou atualiza) a configuração escolhida pelo usuário pra um
+   * título de extrato — da próxima vez que o mesmo título aparecer numa
+   * importação, essa configuração é usada como padrão.
+   */
+  async salvarRegraImportacao(regra: {
+    tituloOriginal: string;
+    descricao: string | null;
+    categoriaId: string | null;
+    contaId: string | null;
+    cartaoId: string | null;
+  }): Promise<void> {
+    await this.init();
+
+    const existente = await this.db.select(
+      `SELECT id FROM regras_importacao WHERE usuario_id = ? AND titulo_original = ? LIMIT 1`,
+      [USUARIO_LOCAL_ID, regra.tituloOriginal]
+    );
+
+    const agora = new Date().toISOString();
+
+    if (existente.length) {
+      await this.db.execute(
+        `
+        UPDATE regras_importacao
+        SET descricao = ?, categoria_id = ?, conta_id = ?, cartao_id = ?, atualizado_em = ?
+        WHERE id = ?
+        `,
+        [
+          regra.descricao,
+          regra.categoriaId,
+          regra.contaId,
+          regra.cartaoId,
+          agora,
+          existente[0].id,
+        ]
+      );
+
+      return;
+    }
+
+    await this.db.execute(
+      `
+      INSERT INTO regras_importacao (
+        id, usuario_id, titulo_original, descricao, categoria_id, conta_id, cartao_id, atualizado_em
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        this.gerarId(),
+        USUARIO_LOCAL_ID,
+        regra.tituloOriginal,
+        regra.descricao,
+        regra.categoriaId,
+        regra.contaId,
+        regra.cartaoId,
+        agora,
+      ]
+    );
+  }
+
+  /**
+   * Marca que a série de parcelas completa desse título já foi enviada
+   * (ver `criarLancamentoParceladoAncorado`) — da próxima vez que uma
+   * parcela do mesmo título (com a mesma quantidade total) aparecer num
+   * CSV, ela é reconhecida como já importada e não sobe de novo.
+   */
+  async marcarSerieParcelasEnviada(
+    tituloOriginal: string,
+    quantidadeParcelas: number
+  ): Promise<void> {
+    await this.init();
+
+    const existente = await this.db.select(
+      `SELECT id FROM regras_importacao WHERE usuario_id = ? AND titulo_original = ? LIMIT 1`,
+      [USUARIO_LOCAL_ID, tituloOriginal]
+    );
+
+    const agora = new Date().toISOString();
+
+    if (existente.length) {
+      await this.db.execute(
+        `UPDATE regras_importacao SET serie_parcelas_total = ?, atualizado_em = ? WHERE id = ?`,
+        [quantidadeParcelas, agora, existente[0].id]
+      );
+
+      return;
+    }
+
+    await this.db.execute(
+      `
+      INSERT INTO regras_importacao (
+        id, usuario_id, titulo_original, descricao, categoria_id, conta_id, cartao_id, serie_parcelas_total, atualizado_em
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        this.gerarId(),
+        USUARIO_LOCAL_ID,
+        tituloOriginal,
+        null,
+        null,
+        null,
+        null,
+        quantidadeParcelas,
+        agora,
+      ]
+    );
   }
 }
