@@ -237,6 +237,12 @@ export class ImportarCsvComponent implements OnInit {
 
             const regras = await this.db.obterRegrasImportacao();
 
+            // Confirma se a série marcada como "já enviada" ainda existe
+            // de verdade — se o usuário apagou os lançamentos pra
+            // corrigir algo, o flag sozinho não pode bloquear a
+            // reimportação pra sempre.
+            const gruposExistentes = await this.db.obterGruposParcelamentoExistentes();
+
             this.linhas = brutas.map((bruta) => {
                 const parcela = this.detectarParcela(bruta.tituloOriginal);
                 const chaveRegra = parcela ? parcela.chave : bruta.tituloOriginal;
@@ -250,11 +256,14 @@ export class ImportarCsvComponent implements OnInit {
                         : "";
 
                 // A série de parcelas desse título já foi enviada por
-                // inteiro antes (mesma quantidade) — essa parcela é só
-                // informativa, não precisa (e não deve) subir de novo.
+                // inteiro antes (mesma quantidade) e os lançamentos dela
+                // ainda existem — essa parcela é só informativa, não
+                // precisa (e não deve) subir de novo.
                 const jaImportada = !!(
                     parcela &&
-                    regra?.serie_parcelas_total === parcela.total
+                    regra?.serie_parcelas_total === parcela.total &&
+                    regra.grupo_parcelamento_id &&
+                    gruposExistentes.has(regra.grupo_parcelamento_id)
                 );
 
                 return {
@@ -809,7 +818,7 @@ export class ImportarCsvComponent implements OnInit {
                 const confirmado = this.tipoExtrato === "banco";
 
                 if (linha.modoParcelamento === "parcelas") {
-                    await this.db.criarLancamentoParceladoAncorado({
+                    const gerados = await this.db.criarLancamentoParceladoAncorado({
                         categoria_id: linha.categoriaId,
                         conta_id: origem.conta_id,
                         cartao_id: origem.cartao_id,
@@ -824,6 +833,7 @@ export class ImportarCsvComponent implements OnInit {
                     await this.db.marcarSerieParcelasEnviada(
                         linha.chaveRegra,
                         linha.quantidadeParcelas!,
+                        gerados[0]?.grupo_parcelamento_id ?? null,
                     );
 
                     criados++;

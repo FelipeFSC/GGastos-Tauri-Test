@@ -38,6 +38,8 @@ export interface RegraImportacao {
   cartao_id: string | null;
   /** Quantidade de parcelas da última série completa já enviada (null = nunca subiu uma série completa). */
   serie_parcelas_total: number | null;
+  /** Grupo dessa última série enviada — usado pra checar se ela ainda existe de verdade (ver `criarLancamentoParceladoAncorado`). */
+  grupo_parcelamento_id: string | null;
   atualizado_em: string;
 }
 
@@ -179,6 +181,7 @@ export interface LancamentoGerado {
   parcela_atual: number | null;
   parcela_total: number | null;
   fatura_id: string | null;
+  grupo_parcelamento_id: string | null;
 }
 
 @Injectable({
@@ -612,6 +615,15 @@ export class DatabaseService {
          */
         serie_parcelas_total INTEGER,
 
+        /*
+         * Grupo (lancamentos.grupo_parcelamento_id) da última série
+         * enviada — usado pra checar se ela ainda existe de verdade antes
+         * de confiar em serie_parcelas_total (se o usuário apagou os
+         * lançamentos pra corrigir algo, esse flag sozinho ficaria
+         * "preso" achando que já foi importado pra sempre).
+         */
+        grupo_parcelamento_id TEXT,
+
         atualizado_em TEXT NOT NULL,
 
         UNIQUE (usuario_id, titulo_original),
@@ -664,6 +676,7 @@ export class DatabaseService {
       ["lancamentos", "observacao TEXT"],
 
       ["regras_importacao", "serie_parcelas_total INTEGER"],
+      ["regras_importacao", "grupo_parcelamento_id TEXT"],
     ];
 
     for (const [tabela, colunaDef] of tentativas) {
@@ -1335,11 +1348,17 @@ export class DatabaseService {
     await this.db.execute("BEGIN TRANSACTION");
 
     try {
-      for (let numero = 1; numero <= opcoes.parcela_total; numero++) {
+      /*
+       * Só a partir da parcela "atual" (a que tem a data do próprio CSV)
+       * pra frente — parcelas anteriores já aconteceram no passado, antes
+       * de o usuário começar a usar o app pra esse cartão, então não tem
+       * fatura em aberto pra elas nem sentido em lançá-las agora.
+       */
+      for (let numero = opcoes.parcela_atual; numero <= opcoes.parcela_total; numero++) {
         const deslocamento = numero - opcoes.parcela_atual;
         const dataParcela = this.adicionarMeses(dataAncora, deslocamento);
 
-        const valor = numero === 1 ? valorBase + sobra : valorBase;
+        const valor = numero === opcoes.parcela_atual ? valorBase + sobra : valorBase;
 
         const resultado = await this.inserirLancamento({
           usuario_id: USUARIO_LOCAL_ID,
@@ -1354,7 +1373,7 @@ export class DatabaseService {
           valor,
           data: this.formatarData(dataParcela),
 
-          confirmado: numero < opcoes.parcela_atual,
+          confirmado: false,
 
           fixo: false,
           frequencia: null,
@@ -1602,6 +1621,7 @@ export class DatabaseService {
       parcela_atual: dados.parcela_atual ?? null,
       parcela_total: dados.parcela_total ?? null,
       fatura_id: faturaId,
+      grupo_parcelamento_id: dados.grupo_parcelamento_id ?? null,
     };
   }
 
@@ -3301,10 +3321,17 @@ export class DatabaseService {
    * (ver `criarLancamentoParceladoAncorado`) — da próxima vez que uma
    * parcela do mesmo título (com a mesma quantidade total) aparecer num
    * CSV, ela é reconhecida como já importada e não sobe de novo.
+   *
+   * Guarda junto o `grupoParcelamentoId` dessa série: é o que permite,
+   * mais tarde, checar se ela ainda existe de verdade (ver
+   * `obterGruposParcelamentoExistentes`) — se o usuário apagou os
+   * lançamentos pra corrigir algo, esse flag sozinho ficaria "preso"
+   * bloqueando a reimportação pra sempre.
    */
   async marcarSerieParcelasEnviada(
     tituloOriginal: string,
-    quantidadeParcelas: number
+    quantidadeParcelas: number,
+    grupoParcelamentoId: string | null
   ): Promise<void> {
     await this.init();
 
@@ -3317,8 +3344,8 @@ export class DatabaseService {
 
     if (existente.length) {
       await this.db.execute(
-        `UPDATE regras_importacao SET serie_parcelas_total = ?, atualizado_em = ? WHERE id = ?`,
-        [quantidadeParcelas, agora, existente[0].id]
+        `UPDATE regras_importacao SET serie_parcelas_total = ?, grupo_parcelamento_id = ?, atualizado_em = ? WHERE id = ?`,
+        [quantidadeParcelas, grupoParcelamentoId, agora, existente[0].id]
       );
 
       return;
@@ -3327,9 +3354,9 @@ export class DatabaseService {
     await this.db.execute(
       `
       INSERT INTO regras_importacao (
-        id, usuario_id, titulo_original, descricao, categoria_id, conta_id, cartao_id, serie_parcelas_total, atualizado_em
+        id, usuario_id, titulo_original, descricao, categoria_id, conta_id, cartao_id, serie_parcelas_total, grupo_parcelamento_id, atualizado_em
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         this.gerarId(),
@@ -3340,8 +3367,27 @@ export class DatabaseService {
         null,
         null,
         quantidadeParcelas,
+        grupoParcelamentoId,
         agora,
       ]
+    );
+  }
+
+  /**
+   * Ids de todos os grupos de parcelamento que ainda têm pelo menos um
+   * lançamento vivo — usado na importação de CSV pra confirmar se uma
+   * série marcada como "já enviada" ainda existe de verdade, em vez de
+   * confiar cegamente no flag salvo em `regras_importacao`.
+   */
+  async obterGruposParcelamentoExistentes(): Promise<Set<string>> {
+    await this.init();
+
+    const linhas = await this.db.select(
+      `SELECT DISTINCT grupo_parcelamento_id FROM lancamentos WHERE grupo_parcelamento_id IS NOT NULL`
+    );
+
+    return new Set(
+      linhas.map((linha: { grupo_parcelamento_id: string }) => linha.grupo_parcelamento_id)
     );
   }
 }
