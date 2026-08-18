@@ -182,6 +182,10 @@
   border-bottom: none;
 }
 
+.tag-item.inactive {
+  opacity: 0.55;
+}
+
 
 /* INFORMAÇÕES */
 
@@ -194,6 +198,18 @@
 .tag-info strong {
   font-size: 14px;
   color: #374151;
+}
+
+.tag-inactive-badge {
+  padding: 3px 7px;
+
+  border-radius: 10px;
+
+  background: #f1f3f4;
+  color: #5f6368;
+
+  font-size: 10px;
+  font-weight: 600;
 }
 
 
@@ -244,6 +260,32 @@
 .btn-delete:hover {
   background: #fff0f0;
   color: #d93025;
+}
+
+
+/* REATIVAR */
+
+.btn-reativar {
+  width: 34px;
+  height: 34px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+  color: #4285f4;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: 0.15s;
+}
+
+.btn-reativar:hover {
+  background: #eef4ff;
 }
 
 

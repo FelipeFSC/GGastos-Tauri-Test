@@ -8,6 +8,7 @@ interface Conta {
     nome: string;
     icone?: string | null;
     cor?: string | null;
+    ativo?: number;
 }
 
 interface Cartao {
@@ -15,6 +16,7 @@ interface Cartao {
     nome: string;
     icone?: string | null;
     cor?: string | null;
+    ativo?: number;
 }
 
 interface Categoria {
@@ -23,6 +25,7 @@ interface Categoria {
     icone?: string | null;
     cor?: string | null;
     categoria_pai_id?: string | null;
+    ativo?: number;
 }
 
 export interface Lancamento {
@@ -48,6 +51,7 @@ export interface Lancamento {
 export interface TagRef {
     id: string;
     nome: string;
+    ativo?: number;
 }
 
 export interface AnexoExistente {
@@ -128,6 +132,9 @@ export class LancamentoModalComponent implements OnInit {
     /** Cartão do lançamento antes da edição (null se não for cartão ou for criação nova). */
     cartaoIdOriginal: string | null = null;
 
+    /** Valor do lançamento antes da edição, usado pra calcular o impacto no limite do cartão. */
+    private valorOriginal = 0;
+
     /**
      * true quando o lançamento em edição pertence a um grupo de repetição
      * (fixo ou parcelado). Nesse caso o tipo de repetição fica travado e
@@ -187,7 +194,7 @@ export class LancamentoModalComponent implements OnInit {
         );
 
         this.tagsDisponiveis = await this.db.query<TagRef>(
-            `SELECT id, nome FROM tags WHERE usuario_id = ? ORDER BY nome`,
+            `SELECT id, nome, ativo FROM tags WHERE usuario_id = ? ORDER BY nome`,
             [USUARIO_LOCAL_ID],
         );
     }
@@ -237,6 +244,7 @@ export class LancamentoModalComponent implements OnInit {
 
         this.editarId = null;
         this.cartaoIdOriginal = null;
+        this.valorOriginal = 0;
         this.editandoGrupo = false;
         this.tipoRepeticaoOriginal = null;
         this.escopoEdicao = "atual";
@@ -263,6 +271,7 @@ export class LancamentoModalComponent implements OnInit {
     async abrirEdicao(lancamento: Lancamento): Promise<void> {
         this.editarId = lancamento.id;
         this.cartaoIdOriginal = lancamento.cartao_id;
+        this.valorOriginal = lancamento.valor;
 
         this.tipoModal = lancamento.tipo === "receita" ? "receita" : "despesa";
 
@@ -405,19 +414,50 @@ export class LancamentoModalComponent implements OnInit {
     // CATEGORIAS
     // =====================================================================
 
+    /** Ativa, ou é a categoria já atribuída a este lançamento (edição de item antigo). */
+    private categoriaSelecionavel(categoria: Categoria): boolean {
+        return categoria.ativo !== 0 || categoria.id === this.form.categoria_id;
+    }
+
     get categoriasPrincipais(): Categoria[] {
-        return this.categorias.filter((categoria) => !categoria.categoria_pai_id);
+        const categoriaSelecionada = this.categorias.find(
+            (categoria) => categoria.id === this.form.categoria_id,
+        );
+
+        const paiDaSelecionada = categoriaSelecionada?.categoria_pai_id;
+
+        return this.categorias.filter(
+            (categoria) =>
+                !categoria.categoria_pai_id &&
+                (this.categoriaSelecionavel(categoria) || categoria.id === paiDaSelecionada),
+        );
     }
 
     subcategoriasDa(categoriaId: string): Categoria[] {
         return this.categorias.filter(
-            (categoria) => categoria.categoria_pai_id === categoriaId,
+            (categoria) =>
+                categoria.categoria_pai_id === categoriaId &&
+                this.categoriaSelecionavel(categoria),
         );
     }
 
     // =====================================================================
     // ORIGEM
     // =====================================================================
+
+    /** Contas ativas, mais a conta já atribuída a este lançamento (edição de item antigo). */
+    get contasSelecionaveis(): Conta[] {
+        return this.contas.filter(
+            (conta) => conta.ativo !== 0 || this.form.origem === `conta:${conta.id}`,
+        );
+    }
+
+    /** Cartões ativos, mais o cartão já atribuído a este lançamento (edição de item antigo). */
+    get cartoesSelecionaveis(): Cartao[] {
+        return this.cartoes.filter(
+            (cartao) => cartao.ativo !== 0 || this.form.origem === `cartao:${cartao.id}`,
+        );
+    }
 
     private processarOrigem(): {
         conta_id: string | null;
@@ -540,7 +580,9 @@ export class LancamentoModalComponent implements OnInit {
      * disponível no <select>, pra não deixar escolher a mesma duas vezes.
      */
     get tagsParaSelecionar(): TagRef[] {
-        return this.tagsDisponiveis.filter((t) => !this.form.tagIds.includes(t.id));
+        return this.tagsDisponiveis.filter(
+            (t) => t.ativo !== 0 && !this.form.tagIds.includes(t.id),
+        );
     }
 
     // =====================================================================
@@ -724,6 +766,40 @@ export class LancamentoModalComponent implements OnInit {
     }
 
     // =====================================================================
+    // LIMITE DO CARTÃO
+    // =====================================================================
+
+    /**
+     * Avisa (sem bloquear) quando a despesa vai deixar o cartão estourado.
+     *
+     * Numa edição do mesmo cartão, considera só o acréscimo em relação ao
+     * valor original — o valor antigo já está contado no limite disponível
+     * atual, então só o que passar disso é que estoura de fato.
+     */
+    private async confirmarLimiteCartao(
+        cartaoId: string,
+        valor: number,
+    ): Promise<boolean> {
+        const disponivel = await this.db.obterLimiteDisponivelCartao(cartaoId);
+
+        const acrescimo =
+            this.editarId && this.cartaoIdOriginal === cartaoId
+                ? valor - this.valorOriginal
+                : valor;
+
+        if (acrescimo <= disponivel) {
+            return true;
+        }
+
+        const cartao = this.cartoes.find((item) => item.id === cartaoId);
+
+        return confirm(
+            `Essa despesa vai exceder o limite disponível do cartão${cartao ? ` "${cartao.nome}"` : ""
+            } em R$ ${this.valorFormatado(acrescimo - disponivel)}. Deseja continuar mesmo assim?`,
+        );
+    }
+
+    // =====================================================================
     // SALVAMENTO
     // =====================================================================
 
@@ -764,6 +840,18 @@ export class LancamentoModalComponent implements OnInit {
 
         try {
             const origem = this.processarOrigem();
+
+            if (this.tipoModal === "despesa" && origem.cartao_id) {
+                const prosseguir = await this.confirmarLimiteCartao(
+                    origem.cartao_id,
+                    valor,
+                );
+
+                if (!prosseguir) {
+                    this.salvando = false;
+                    return;
+                }
+            }
 
             /*
              * ================================================================

@@ -13,6 +13,7 @@ interface Categoria {
   icone: string | null;
   cor: string | null;
   categoria_pai_id: string | null;
+  ativo: number;
 }
 
 interface Limite {
@@ -34,7 +35,6 @@ interface Limite {
 export class LimitesComponent implements OnInit {
   limites: Limite[] = [];
   categorias: Categoria[] = [];
-  categoriasPrincipais: Categoria[] = [];
 
   mes = new Date().getMonth() + 1;
   ano = new Date().getFullYear();
@@ -52,16 +52,24 @@ export class LimitesComponent implements OnInit {
 
   async carregar() {
     this.categorias = await this.db.query<Categoria>(
-      "SELECT id, nome, tipo, icone, cor, categoria_pai_id FROM categorias ORDER BY nome"
-    );
-
-    // No formulário só faz sentido escolher a categoria "mãe": o gasto de
-    // qualquer sub-categoria dela já entra automaticamente na soma.
-    this.categoriasPrincipais = this.categorias.filter(
-      (c) => !c.categoria_pai_id && c.tipo === "despesa"
+      "SELECT id, nome, tipo, icone, cor, categoria_pai_id, ativo FROM categorias ORDER BY nome"
     );
 
     await this.carregarLimites();
+  }
+
+  /**
+   * No formulário só faz sentido escolher a categoria "mãe": o gasto de
+   * qualquer sub-categoria dela já entra automaticamente na soma. Ativas,
+   * mais a que já está atribuída ao limite em edição.
+   */
+  get categoriasPrincipais(): Categoria[] {
+    return this.categorias.filter(
+      (c) =>
+        !c.categoria_pai_id &&
+        c.tipo === "despesa" &&
+        (c.ativo !== 0 || c.id === this.categoriaId)
+    );
   }
 
   async carregarLimites() {

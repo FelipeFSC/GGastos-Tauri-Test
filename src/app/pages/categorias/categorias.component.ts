@@ -14,6 +14,7 @@ interface Categoria {
     icone: string | null;
     cor: string | null;
     categoria_pai_id: string | null;
+    ativo: number;
 }
 
 @Component({
@@ -296,9 +297,26 @@ export class CategoriasComponent implements OnInit {
     // =========================================================
 
     async remover(id: string) {
+        if (
+            !confirm(
+                "Tem certeza que deseja excluir esta categoria? Os lançamentos já registrados continuam existindo.",
+            )
+        ) {
+            return;
+        }
+
         await this.db.run(
-            "DELETE FROM categorias WHERE id = ? OR categoria_pai_id = ?",
+            "UPDATE categorias SET ativo = 0 WHERE id = ? OR categoria_pai_id = ?",
             [id, id],
+        );
+
+        await this.carregar();
+    }
+
+    async reativar(id: string) {
+        await this.db.run(
+            "UPDATE categorias SET ativo = 1 WHERE id = ?",
+            [id],
         );
 
         await this.carregar();

@@ -110,7 +110,7 @@
                     </thead>
 
                     <tbody>
-                        <tr *ngFor="let c of contas">
+                        <tr *ngFor="let c of contas" [class.inactive]="!c.ativo">
                             <td>
                                 <div class="account-name">
                                     <div class="account-icon" [style.background]="c.cor || '#4285f4'">
@@ -136,19 +136,34 @@
                             </td>
 
                             <td>
-                                <span class="status" [class.status-disabled]="c.nao_somar_saldo">
+                                <span class="status" [class.status-disabled]="c.nao_somar_saldo"
+                                    *ngIf="c.ativo">
                                     {{ c.nao_somar_saldo ? "Ignorado" : "Contabilizado" }}
+                                </span>
+
+                                <span class="status status-inactive" *ngIf="!c.ativo">
+                                    Inativa
                                 </span>
                             </td>
 
                             <td class="actions">
-                                <button class="btn-edit" (click)="iniciarEdicao(c)" title="Editar conta">
-                                    <span class="material-icons"> edit </span>
-                                </button>
+                                <ng-container *ngIf="c.ativo; else contaInativaAcoes">
+                                    <button class="btn-edit" (click)="iniciarEdicao(c)" title="Editar conta">
+                                        <span class="material-icons"> edit </span>
+                                    </button>
 
-                                <button class="btn-delete" (click)="remover(c.id)" title="Excluir conta">
-                                    <span class="material-icons"> delete </span>
-                                </button>
+                                    <button class="btn-delete" (click)="abrirConfirmacaoExclusao(c)"
+                                        title="Excluir conta">
+                                        <span class="material-icons"> delete </span>
+                                    </button>
+                                </ng-container>
+
+                                <ng-template #contaInativaAcoes>
+                                    <button class="btn-reativar" (click)="reativar(c.id)" title="Reativar conta">
+                                        <span class="material-icons"> restore </span>
+                                        Reativar
+                                    </button>
+                                </ng-template>
                             </td>
                         </tr>
 
@@ -166,4 +181,8 @@
             </div>
         </section>
     </div>
+
+    <app-confirmar-exclusao #confirmarExclusao (manterHistorico)="confirmarManterHistorico()"
+        (apagarTudo)="confirmarApagarTudo()">
+    </app-confirmar-exclusao>
 </div>

@@ -107,7 +107,8 @@
 					<!-- CATEGORIA PRINCIPAL -->
 					<!-- ================================================= -->
 
-					<div class="category-main" *ngIf="categoriaEditando !== categoria.id">
+					<div class="category-main" *ngIf="categoriaEditando !== categoria.id"
+						[class.inactive]="!categoria.ativo">
 						<!-- ÍCONE -->
 
 						<div class="category-icon" [style.background]="categoria.cor || '#4285f4'">
@@ -126,32 +127,49 @@
 							<span class="category-type" [class.receita]="categoria.tipo === 'receita'">
 								{{ categoria.tipo === "receita" ? "Receita" : "Despesa" }}
 							</span>
+
+							<span class="category-inactive-badge" *ngIf="!categoria.ativo">
+								Inativa
+							</span>
 						</div>
 
 						<!-- AÇÕES -->
 
 						<div class="category-actions">
-							<!-- SUBCATEGORIA -->
+							<ng-container *ngIf="categoria.ativo; else categoriaInativaAcoes">
+								<!-- SUBCATEGORIA -->
 
-							<button class="btn-subcategory" type="button" (click)="abrirSubcategoria(categoria.id)">
-								<span class="material-icons"> add </span>
+								<button class="btn-subcategory" type="button" (click)="abrirSubcategoria(categoria.id)">
+									<span class="material-icons"> add </span>
 
-								Sub-categoria
-							</button>
+									Sub-categoria
+								</button>
 
-							<!-- EDITAR -->
+								<!-- EDITAR -->
 
-							<button class="btn-edit" type="button" (click)="editarCategoria(categoria)"
-								title="Editar categoria">
-								<span class="material-icons"> edit </span>
-							</button>
+								<button class="btn-edit" type="button" (click)="editarCategoria(categoria)"
+									title="Editar categoria">
+									<span class="material-icons"> edit </span>
+								</button>
 
-							<!-- EXCLUIR -->
+								<!-- EXCLUIR -->
 
-							<button class="btn-delete" type="button" (click)="remover(categoria.id)"
-								title="Excluir categoria">
-								<span class="material-icons"> delete </span>
-							</button>
+								<button class="btn-delete" type="button" (click)="remover(categoria.id)"
+									title="Excluir categoria">
+									<span class="material-icons"> delete </span>
+								</button>
+							</ng-container>
+
+							<ng-template #categoriaInativaAcoes>
+								<!-- REATIVAR -->
+
+								<button class="btn-reativar" type="button" (click)="reativar(categoria.id)"
+									title="Reativar categoria">
+									<span class="material-icons"> restore </span>
+
+									Reativar
+								</button>
+							</ng-template>
 						</div>
 					</div>
 
@@ -247,14 +265,23 @@
 							<ng-container *ngIf="subcategoriaEditando !== subcategoria.id">
 								<span class="subcategory-dot" [style.background]="categoria.cor || '#4285f4'"></span>
 
-								<span class="subcategory-name" (click)="editarSubcategoria(subcategoria)"
-									title="Clique para editar">
+								<span class="subcategory-name" [class.inactive]="!subcategoria.ativo"
+									(click)="editarSubcategoria(subcategoria)" title="Clique para editar">
 									{{ subcategoria.nome }}
 								</span>
 
-								<button class="subcategory-delete" type="button" (click)="remover(subcategoria.id)"
-									title="Excluir sub-categoria">
+								<span class="category-inactive-badge" *ngIf="!subcategoria.ativo">
+									Inativa
+								</span>
+
+								<button class="subcategory-delete" type="button" *ngIf="subcategoria.ativo"
+									(click)="remover(subcategoria.id)" title="Excluir sub-categoria">
 									<span class="material-icons"> delete </span>
+								</button>
+
+								<button class="btn-reativar-sub" type="button" *ngIf="!subcategoria.ativo"
+									(click)="reativar(subcategoria.id)" title="Reativar sub-categoria">
+									<span class="material-icons"> restore </span>
 								</button>
 							</ng-container>
 

@@ -316,7 +316,7 @@
 
                 <select [(ngModel)]="formPagamento.contaId">
                     <option value="">Selecione uma conta</option>
-                    <option *ngFor="let c of contas" [value]="c.id">{{ c.nome }}</option>
+                    <option *ngFor="let c of contasSelecionaveis" [value]="c.id">{{ c.nome }}</option>
                 </select>
             </div>
         </div>

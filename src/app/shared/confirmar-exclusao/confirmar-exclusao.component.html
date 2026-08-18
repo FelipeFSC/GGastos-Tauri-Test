@@ -1,0 +1,46 @@
+<div class="modal-overlay" *ngIf="modalAberto" (click)="cancelar()">
+    <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-icon">
+                <span class="material-icons">warning</span>
+            </div>
+            <h2>Excluir {{ tipoItem }}</h2>
+        </div>
+
+        <div class="modal-body" *ngIf="tipoItem === 'conta'; else corpoCartao">
+            <p>
+                Tem certeza que deseja excluir a conta <strong>"{{ nomeItem }}"</strong>?
+            </p>
+            <p>
+                Você pode manter os lançamentos já registrados (a conta só fica oculta) ou apagar
+                tudo (a conta e todos os lançamentos vinculados a ela serão excluídos
+                definitivamente).
+            </p>
+        </div>
+
+        <ng-template #corpoCartao>
+            <div class="modal-body">
+                <p>
+                    Tem certeza que deseja excluir o cartão <strong>"{{ nomeItem }}"</strong>?
+                </p>
+                <p>
+                    Você pode manter os lançamentos já registrados (o cartão só fica oculto) ou
+                    apagar tudo (o cartão e todos os lançamentos vinculados a ele serão excluídos
+                    definitivamente).
+                </p>
+            </div>
+        </ng-template>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-cancelar" (click)="cancelar()">
+                Cancelar
+            </button>
+            <button type="button" class="btn-manter" (click)="confirmarManterHistorico()">
+                Manter histórico
+            </button>
+            <button type="button" class="btn-apagar" (click)="confirmarApagarTudo()">
+                Apagar tudo
+            </button>
+        </div>
+    </div>
+</div>

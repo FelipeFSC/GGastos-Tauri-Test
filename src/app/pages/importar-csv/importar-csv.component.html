@@ -203,13 +203,13 @@
                     <option value="" disabled>Selecione uma conta ou cartão</option>
 
                     <optgroup label="Contas">
-                        <option *ngFor="let conta of contas" [value]="'conta:' + conta.id">
+                        <option *ngFor="let conta of contasSelecionaveis" [value]="'conta:' + conta.id">
                             {{ conta.nome }}
                         </option>
                     </optgroup>
 
                     <optgroup label="Cartões">
-                        <option *ngFor="let cartao of cartoes" [value]="'cartao:' + cartao.id">
+                        <option *ngFor="let cartao of cartoesSelecionaveis" [value]="'cartao:' + cartao.id">
                             {{ cartao.nome }}
                         </option>
                     </optgroup>

@@ -187,7 +187,7 @@ export class VisaoGeralComponent implements OnInit, OnDestroy {
   }
 
   private async carregarContas(): Promise<void> {
-    const contas = await this.db.query<Conta>("SELECT * FROM contas ORDER BY nome");
+    const contas = await this.db.query<Conta>("SELECT * FROM contas WHERE ativo = 1 ORDER BY nome");
 
     const comSaldo: ContaResumo[] = [];
     let saldoGeral = 0;
@@ -203,7 +203,7 @@ export class VisaoGeralComponent implements OnInit, OnDestroy {
   }
 
   private async carregarCartoes(): Promise<void> {
-    const cartoes = await this.db.query<Cartao>("SELECT * FROM cartoes_credito ORDER BY nome");
+    const cartoes = await this.db.query<Cartao>("SELECT * FROM cartoes_credito WHERE ativo = 1 ORDER BY nome");
 
     const comFatura: CartaoResumo[] = [];
     let faturasMes = 0;

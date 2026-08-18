@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
@@ -7,10 +7,12 @@ import {
     USUARIO_LOCAL_ID,
 } from "../../services/database.service";
 import { IconPickerButtonComponent } from "../../shared/icon-picker/icon-picker-button.component";
+import { ConfirmarExclusaoComponent } from "../../shared/confirmar-exclusao/confirmar-exclusao.component";
 
 interface Conta {
     id: string;
     nome: string;
+    ativo: number;
 }
 
 interface Cartao {
@@ -22,6 +24,7 @@ interface Cartao {
     dia_fechamento: number;
     dia_vencimento: number;
     conta_pagamento_id: string | null;
+    ativo: number;
 }
 
 interface Fatura {
@@ -38,13 +41,17 @@ interface Fatura {
 @Component({
     selector: "app-cartoes",
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, IconPickerButtonComponent],
+    imports: [CommonModule, FormsModule, RouterLink, IconPickerButtonComponent, ConfirmarExclusaoComponent],
     templateUrl: "./cartoes.component.html",
     styleUrl: "./cartoes.component.css",
 })
 export class CartoesComponent implements OnInit {
+    @ViewChild("confirmarExclusao") confirmarExclusao!: ConfirmarExclusaoComponent;
+
     cartoes: Cartao[] = [];
     contas: Conta[] = [];
+
+    private idParaExcluir: string | null = null;
 
     nome = "";
     icone = "";
@@ -67,7 +74,7 @@ export class CartoesComponent implements OnInit {
 
     async carregar() {
         this.contas = await this.db.query<Conta>(
-            "SELECT id, nome FROM contas ORDER BY nome",
+            "SELECT id, nome, ativo FROM contas ORDER BY nome",
         );
 
         this.cartoes = await this.db.query<Cartao>(
@@ -79,6 +86,13 @@ export class CartoesComponent implements OnInit {
         if (!id) return "-";
 
         return this.contas.find((c) => c.id === id)?.nome ?? "-";
+    }
+
+    /** Contas oferecidas no seletor de "conta de pagamento": ativas, ou a que já está configurada. */
+    get contasSelecionaveis(): Conta[] {
+        return this.contas.filter(
+            (conta) => conta.ativo || conta.id === this.contaPagamentoId,
+        );
     }
 
     async toggleFaturas(cartaoId: string) {
@@ -247,9 +261,33 @@ export class CartoesComponent implements OnInit {
         this.contaPagamentoId = "";
     }
 
-    async remover(id: string) {
-        await this.db.run("DELETE FROM cartoes_credito WHERE id = ?", [id]);
+    abrirConfirmacaoExclusao(cartao: Cartao) {
+        this.idParaExcluir = cartao.id;
+        this.confirmarExclusao.abrir(cartao.nome, "cartão");
+    }
 
+    async confirmarManterHistorico() {
+        if (!this.idParaExcluir) return;
+
+        await this.db.run("UPDATE cartoes_credito SET ativo = 0 WHERE id = ?", [
+            this.idParaExcluir,
+        ]);
+
+        this.idParaExcluir = null;
+        await this.carregar();
+    }
+
+    async confirmarApagarTudo() {
+        if (!this.idParaExcluir) return;
+
+        await this.db.excluirCartaoComHistorico(this.idParaExcluir);
+
+        this.idParaExcluir = null;
+        await this.carregar();
+    }
+
+    async reativar(id: string) {
+        await this.db.run("UPDATE cartoes_credito SET ativo = 1 WHERE id = ?", [id]);
         await this.carregar();
     }
 }

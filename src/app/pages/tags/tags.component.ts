@@ -9,6 +9,7 @@ import {
 interface Tag {
   id: string;
   nome: string;
+  ativo: number;
 }
 
 @Component({
@@ -57,8 +58,25 @@ export class TagsComponent implements OnInit {
   }
 
   async remover(id: string) {
+    if (
+      !confirm(
+        "Tem certeza que deseja excluir esta tag? Os lançamentos já registrados continuam existindo."
+      )
+    ) {
+      return;
+    }
+
     await this.db.run(
-      "DELETE FROM tags WHERE id = ?",
+      "UPDATE tags SET ativo = 0 WHERE id = ?",
+      [id]
+    );
+
+    await this.carregar();
+  }
+
+  async reativar(id: string) {
+    await this.db.run(
+      "UPDATE tags SET ativo = 1 WHERE id = ?",
       [id]
     );
 

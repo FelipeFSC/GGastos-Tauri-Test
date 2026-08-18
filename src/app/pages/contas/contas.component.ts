@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import {
@@ -6,6 +6,7 @@ import {
 	USUARIO_LOCAL_ID,
 } from "../../services/database.service";
 import { IconPickerButtonComponent } from "../../shared/icon-picker/icon-picker-button.component";
+import { ConfirmarExclusaoComponent } from "../../shared/confirmar-exclusao/confirmar-exclusao.component";
 
 interface Conta {
 	id: string;
@@ -14,17 +15,22 @@ interface Conta {
 	cor: string | null;
 	saldo_inicial: number;
 	nao_somar_saldo: number;
+	ativo: number;
 }
 
 @Component({
 	selector: "app-contas",
 	standalone: true,
-	imports: [CommonModule, FormsModule, IconPickerButtonComponent],
+	imports: [CommonModule, FormsModule, IconPickerButtonComponent, ConfirmarExclusaoComponent],
 	templateUrl: "./contas.component.html",
 	styleUrl: "./contas.component.css",
 })
 export class ContasComponent implements OnInit {
+	@ViewChild("confirmarExclusao") confirmarExclusao!: ConfirmarExclusaoComponent;
+
 	contas: Conta[] = [];
+
+	private idParaExcluir: string | null = null;
 
 	nome = "";
 	icone = "";
@@ -154,8 +160,33 @@ export class ContasComponent implements OnInit {
 		this.naoSomar = false;
 	}
 
-	async remover(id: string) {
-		await this.db.run("DELETE FROM contas WHERE id = ?", [id]);
+	abrirConfirmacaoExclusao(conta: Conta) {
+		this.idParaExcluir = conta.id;
+		this.confirmarExclusao.abrir(conta.nome, "conta");
+	}
+
+	async confirmarManterHistorico() {
+		if (!this.idParaExcluir) return;
+
+		await this.db.run("UPDATE contas SET ativo = 0 WHERE id = ?", [
+			this.idParaExcluir,
+		]);
+
+		this.idParaExcluir = null;
+		await this.carregar();
+	}
+
+	async confirmarApagarTudo() {
+		if (!this.idParaExcluir) return;
+
+		await this.db.excluirContaComHistorico(this.idParaExcluir);
+
+		this.idParaExcluir = null;
+		await this.carregar();
+	}
+
+	async reativar(id: string) {
+		await this.db.run("UPDATE contas SET ativo = 1 WHERE id = ?", [id]);
 		await this.carregar();
 	}
 }

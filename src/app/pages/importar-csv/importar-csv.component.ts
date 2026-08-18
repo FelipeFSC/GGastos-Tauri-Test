@@ -13,16 +13,19 @@ interface Categoria {
     icone?: string | null;
     cor?: string | null;
     categoria_pai_id?: string | null;
+    ativo?: number;
 }
 
 interface Conta {
     id: string;
     nome: string;
+    ativo: number;
 }
 
 interface Cartao {
     id: string;
     nome: string;
+    ativo: number;
 }
 
 interface LinhaImportada {
@@ -165,12 +168,12 @@ export class ImportarCsvComponent implements OnInit {
         );
 
         this.contas = await this.db.query<Conta>(
-            `SELECT id, nome FROM contas WHERE usuario_id = ? ORDER BY nome`,
+            `SELECT id, nome, ativo FROM contas WHERE usuario_id = ? ORDER BY nome`,
             [USUARIO_LOCAL_ID],
         );
 
         this.cartoes = await this.db.query<Cartao>(
-            `SELECT id, nome FROM cartoes_credito WHERE usuario_id = ? ORDER BY nome`,
+            `SELECT id, nome, ativo FROM cartoes_credito WHERE usuario_id = ? ORDER BY nome`,
             [USUARIO_LOCAL_ID],
         );
     }
@@ -531,13 +534,44 @@ export class ImportarCsvComponent implements OnInit {
     // CATEGORIAS
     // =====================================================================
 
+    /** Ativa, ou é a categoria já escolhida na linha em edição. */
+    private categoriaSelecionavel(categoria: Categoria): boolean {
+        return categoria.ativo !== 0 || categoria.id === this.formEdicao.categoriaId;
+    }
+
     get categoriasPrincipais(): Categoria[] {
-        return this.categorias.filter((categoria) => !categoria.categoria_pai_id);
+        const categoriaSelecionada = this.categorias.find(
+            (categoria) => categoria.id === this.formEdicao.categoriaId,
+        );
+
+        const paiDaSelecionada = categoriaSelecionada?.categoria_pai_id;
+
+        return this.categorias.filter(
+            (categoria) =>
+                !categoria.categoria_pai_id &&
+                (this.categoriaSelecionavel(categoria) || categoria.id === paiDaSelecionada),
+        );
     }
 
     subcategoriasDa(categoriaId: string): Categoria[] {
         return this.categorias.filter(
-            (categoria) => categoria.categoria_pai_id === categoriaId,
+            (categoria) =>
+                categoria.categoria_pai_id === categoriaId &&
+                this.categoriaSelecionavel(categoria),
+        );
+    }
+
+    /** Contas ativas, mais a conta já escolhida na linha em edição. */
+    get contasSelecionaveis(): Conta[] {
+        return this.contas.filter(
+            (conta) => conta.ativo !== 0 || this.formEdicao.origem === `conta:${conta.id}`,
+        );
+    }
+
+    /** Cartões ativos, mais o cartão já escolhido na linha em edição. */
+    get cartoesSelecionaveis(): Cartao[] {
+        return this.cartoes.filter(
+            (cartao) => cartao.ativo !== 0 || this.formEdicao.origem === `cartao:${cartao.id}`,
         );
     }
 

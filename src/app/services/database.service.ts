@@ -335,6 +335,7 @@ export class DatabaseService {
         cor TEXT,
         saldo_inicial REAL NOT NULL DEFAULT 0,
         nao_somar_saldo INTEGER NOT NULL DEFAULT 0,
+        ativo INTEGER NOT NULL DEFAULT 1,
 
         FOREIGN KEY (usuario_id)
           REFERENCES usuarios (id)
@@ -355,6 +356,7 @@ export class DatabaseService {
         nome TEXT NOT NULL,
         icone TEXT,
         cor TEXT,
+        ativo INTEGER NOT NULL DEFAULT 1,
 
         FOREIGN KEY (usuario_id)
           REFERENCES usuarios (id)
@@ -375,6 +377,7 @@ export class DatabaseService {
         id TEXT PRIMARY KEY,
         usuario_id TEXT NOT NULL,
         nome TEXT NOT NULL,
+        ativo INTEGER NOT NULL DEFAULT 1,
 
         FOREIGN KEY (usuario_id)
           REFERENCES usuarios (id)
@@ -397,6 +400,7 @@ export class DatabaseService {
         dia_fechamento INTEGER NOT NULL,
         dia_vencimento INTEGER NOT NULL,
         conta_pagamento_id TEXT,
+        ativo INTEGER NOT NULL DEFAULT 1,
 
         FOREIGN KEY (usuario_id)
           REFERENCES usuarios (id)
@@ -639,12 +643,17 @@ export class DatabaseService {
     const tentativas: [string, string][] = [
       ["contas", "icone TEXT"],
       ["contas", "cor TEXT"],
+      ["contas", "ativo INTEGER NOT NULL DEFAULT 1"],
 
       ["categorias", "icone TEXT"],
       ["categorias", "cor TEXT"],
+      ["categorias", "ativo INTEGER NOT NULL DEFAULT 1"],
 
       ["cartoes_credito", "icone TEXT"],
       ["cartoes_credito", "cor TEXT"],
+      ["cartoes_credito", "ativo INTEGER NOT NULL DEFAULT 1"],
+
+      ["tags", "ativo INTEGER NOT NULL DEFAULT 1"],
 
       ["lancamentos", "confirmado INTEGER NOT NULL DEFAULT 0"],
       ["lancamentos", "fixo INTEGER NOT NULL DEFAULT 0"],
@@ -1017,6 +1026,78 @@ export class DatabaseService {
       mes_referencia: mesRef,
       ano_referencia: anoRef,
     };
+  }
+
+  /**
+   * Limite disponível de um cartão: o limite cadastrado menos tudo que
+   * ainda está em aberto (faturas não pagas, incluindo parcelas futuras
+   * já lançadas), descontando os pagamentos parciais já feitos nelas.
+   */
+  async obterLimiteDisponivelCartao(cartaoId: string): Promise<number> {
+    await this.init();
+
+    const cartoes = await this.db.select(
+      `SELECT limite FROM cartoes_credito WHERE id = ?`,
+      [cartaoId]
+    );
+
+    if (!cartoes.length) {
+      throw new Error("Cartão não encontrado para calcular limite.");
+    }
+
+    const limite = Number(cartoes[0].limite ?? 0);
+
+    const lancado = await this.db.select(
+      `
+      SELECT COALESCE(SUM(l.valor), 0) AS total
+      FROM lancamentos l
+      JOIN faturas f ON f.id = l.fatura_id
+      WHERE f.cartao_id = ? AND f.status != 'paga'
+      `,
+      [cartaoId]
+    );
+
+    const pago = await this.db.select(
+      `
+      SELECT COALESCE(SUM(p.valor), 0) AS total
+      FROM faturas_pagamentos p
+      JOIN faturas f ON f.id = p.fatura_id
+      WHERE f.cartao_id = ? AND f.status != 'paga'
+      `,
+      [cartaoId]
+    );
+
+    const comprometido = Number(lancado[0]?.total ?? 0) - Number(pago[0]?.total ?? 0);
+
+    return Math.round((limite - comprometido) * 100) / 100;
+  }
+
+  /**
+   * Exclui um cartão e apaga junto todo o histórico de lançamentos
+   * vinculados a ele — as faturas e pagamentos de fatura somem sozinhos
+   * via ON DELETE CASCADE ao excluir o cartão.
+   */
+  async excluirCartaoComHistorico(cartaoId: string): Promise<void> {
+    await this.init();
+
+    await this.db.execute("BEGIN TRANSACTION");
+
+    try {
+      await this.db.execute(
+        `DELETE FROM lancamentos WHERE cartao_id = ?`,
+        [cartaoId]
+      );
+
+      await this.db.execute(
+        `DELETE FROM cartoes_credito WHERE id = ?`,
+        [cartaoId]
+      );
+
+      await this.db.execute("COMMIT");
+    } catch (erro) {
+      await this.db.execute("ROLLBACK");
+      throw erro;
+    }
   }
 
   /**
@@ -2502,6 +2583,34 @@ export class DatabaseService {
     return Number(
       rows[0]?.saldo ?? 0
     );
+  }
+
+  /**
+   * Exclui uma conta e apaga junto todo o histórico de lançamentos
+   * vinculados a ela (ao contrário do soft delete, aqui não sobra nada
+   * "órfão" com conta_id nulo).
+   */
+  async excluirContaComHistorico(contaId: string): Promise<void> {
+    await this.init();
+
+    await this.db.execute("BEGIN TRANSACTION");
+
+    try {
+      await this.db.execute(
+        `DELETE FROM lancamentos WHERE conta_id = ?`,
+        [contaId]
+      );
+
+      await this.db.execute(
+        `DELETE FROM contas WHERE id = ?`,
+        [contaId]
+      );
+
+      await this.db.execute("COMMIT");
+    } catch (erro) {
+      await this.db.execute("ROLLBACK");
+      throw erro;
+    }
   }
 
   // =====================================================================

@@ -24,6 +24,7 @@ interface Categoria {
 interface ContaOpcao {
     id: string;
     nome: string;
+    ativo: number;
 }
 
 interface FormPagamento {
@@ -101,6 +102,13 @@ export class FaturaComponent implements OnInit {
         return this.fatura ? NOMES_MES[this.fatura.mes_referencia - 1] : "";
     }
 
+    /** Contas ativas, mais a conta já usada no pagamento em edição. */
+    get contasSelecionaveis(): ContaOpcao[] {
+        return this.contas.filter(
+            (conta) => conta.ativo !== 0 || conta.id === this.formPagamento.contaId,
+        );
+    }
+
     // =====================================================================
     // CARREGAMENTO
     // =====================================================================
@@ -118,7 +126,7 @@ export class FaturaComponent implements OnInit {
         );
 
         this.contas = await this.db.query<ContaOpcao>(
-            `SELECT id, nome FROM contas WHERE usuario_id = (SELECT usuario_id FROM cartoes_credito WHERE id = ?) ORDER BY nome`,
+            `SELECT id, nome, ativo FROM contas WHERE usuario_id = (SELECT usuario_id FROM cartoes_credito WHERE id = ?) ORDER BY nome`,
             [this.fatura.cartao_id],
         );
 

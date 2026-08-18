@@ -96,7 +96,7 @@
                     <select id="contaPagamento" [(ngModel)]="contaPagamentoId" name="contaPagamentoId">
                         <option value="" disabled>Selecione uma conta</option>
 
-                        <option *ngFor="let c of contas" [value]="c.id">
+                        <option *ngFor="let c of contasSelecionaveis" [value]="c.id">
                             {{ c.nome }}
                         </option>
                     </select>
@@ -126,7 +126,7 @@
                 </div>
             </div>
 
-            <div class="credit-card-item" *ngFor="let c of cartoes">
+            <div class="credit-card-item" *ngFor="let c of cartoes" [class.inactive]="!c.ativo">
                 <!-- RESUMO -->
                 <div class="card-summary">
                     <div class="card-visual" [style.background]="c.cor || '#4285f4'">
@@ -143,9 +143,15 @@
 
                     <div class="card-info">
                         <div class="card-title">
-                            <strong>
-                                {{ c.nome }}
-                            </strong>
+                            <div class="card-title-name">
+                                <strong>
+                                    {{ c.nome }}
+                                </strong>
+
+                                <span class="card-inactive-badge" *ngIf="!c.ativo">
+                                    Inativo
+                                </span>
+                            </div>
 
                             <span class="limit">
                                 Limite
@@ -175,19 +181,28 @@
 
                     <!-- AÇÕES -->
                     <div class="card-actions">
-                        <button class="btn-edit" (click)="iniciarEdicao(c)" title="Editar cartão">
-                            <span class="material-icons"> edit </span>
-                        </button>
-
                         <button class="btn-invoices" (click)="toggleFaturas(c.id)">
                             <span class="material-icons"> receipt_long </span>
 
                             {{ cartaoExpandido === c.id ? "Ocultar faturas" : "Ver faturas" }}
                         </button>
 
-                        <button class="btn-delete" (click)="remover(c.id)" title="Excluir cartão">
-                            <span class="material-icons"> delete </span>
-                        </button>
+                        <ng-container *ngIf="c.ativo; else cartaoInativoAcoes">
+                            <button class="btn-edit" (click)="iniciarEdicao(c)" title="Editar cartão">
+                                <span class="material-icons"> edit </span>
+                            </button>
+
+                            <button class="btn-delete" (click)="abrirConfirmacaoExclusao(c)" title="Excluir cartão">
+                                <span class="material-icons"> delete </span>
+                            </button>
+                        </ng-container>
+
+                        <ng-template #cartaoInativoAcoes>
+                            <button class="btn-reativar" (click)="reativar(c.id)" title="Reativar cartão">
+                                <span class="material-icons"> restore </span>
+                                Reativar
+                            </button>
+                        </ng-template>
                     </div>
                 </div>
 
@@ -272,4 +287,8 @@
             </div>
         </section>
     </div>
+
+    <app-confirmar-exclusao #confirmarExclusao (manterHistorico)="confirmarManterHistorico()"
+        (apagarTudo)="confirmarApagarTudo()">
+    </app-confirmar-exclusao>
 </div>

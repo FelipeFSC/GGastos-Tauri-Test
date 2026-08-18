@@ -91,6 +91,7 @@
 
         <div
           class="tag-item"
+          [class.inactive]="!t.ativo"
           *ngFor="let t of tags"
         >
 
@@ -106,17 +107,35 @@
               {{ t.nome }}
             </strong>
 
+            <span class="tag-inactive-badge" *ngIf="!t.ativo">
+              Inativa
+            </span>
+
           </div>
 
 
           <button
             class="btn-delete"
+            *ngIf="t.ativo"
             (click)="remover(t.id)"
             title="Excluir tag"
           >
 
             <span class="material-icons">
               delete
+            </span>
+
+          </button>
+
+          <button
+            class="btn-reativar"
+            *ngIf="!t.ativo"
+            (click)="reativar(t.id)"
+            title="Reativar tag"
+          >
+
+            <span class="material-icons">
+              restore
             </span>
 
           </button>

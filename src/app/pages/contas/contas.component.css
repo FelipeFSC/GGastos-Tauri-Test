@@ -271,6 +271,15 @@ tbody tr:hover {
 	color: #777d87;
 }
 
+.status-inactive {
+	background: #f1f2f4;
+	color: #777d87;
+}
+
+tr.inactive {
+	opacity: 0.55;
+}
+
 /* ACTIONS */
 
 .actions {
@@ -358,6 +367,32 @@ tbody tr:hover {
 .btn-edit:hover {
 	background: #eef4ff;
 	color: #4285f4;
+}
+
+.btn-reativar {
+	height: 34px;
+
+	padding: 0 10px;
+
+	border: 1px solid #dfe3e8;
+	border-radius: 8px;
+
+	background: white;
+	color: #4285f4;
+
+	cursor: pointer;
+
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.btn-reativar:hover {
+	background: #eef4ff;
+	border-color: #4285f4;
 }
 
 .btn-cancel {
