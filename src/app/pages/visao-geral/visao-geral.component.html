@@ -66,52 +66,70 @@
             </strong>
           </div>
 
-          <button type="button" class="btn-eye" (click)="mostrarSaldo = !mostrarSaldo">
-            <span class="material-icons">{{ mostrarSaldo ? 'visibility' : 'visibility_off' }}</span>
-          </button>
+          <div class="card-header-actions">
+            <button type="button" class="btn-eye" (click)="mostrarSaldo = !mostrarSaldo">
+              <span class="material-icons">{{ mostrarSaldo ? 'visibility' : 'visibility_off' }}</span>
+            </button>
+
+            <button type="button" class="btn-collapse" (click)="toggleCard('saldo')"
+              [title]="cardFechado('saldo') ? 'Expandir' : 'Recolher'">
+              <span class="material-icons">{{ cardFechado('saldo') ? 'expand_more' : 'expand_less' }}</span>
+            </button>
+          </div>
         </div>
 
-        <h3 class="section-title">Minhas contas</h3>
+        <ng-container *ngIf="!cardFechado('saldo')">
+          <h3 class="section-title">Minhas contas</h3>
 
-        <div class="list-item" *ngFor="let c of contas">
-          <div class="item-icon" [style.background]="c.cor || '#4285f4'">
-            <span class="material-icons">{{ c.icone || 'account_balance' }}</span>
+          <div class="list-item" *ngFor="let c of contas">
+            <div class="item-icon" [style.background]="c.cor || '#4285f4'">
+              <span class="material-icons">{{ c.icone || 'account_balance' }}</span>
+            </div>
+
+            <div class="item-info">
+              <strong>{{ c.nome }}</strong>
+              <span>Conta manual</span>
+            </div>
+
+            <strong class="item-value" [class.negativo]="c.saldo < 0" [class.positivo]="c.saldo >= 0">
+              R$ {{ c.saldo | number:'1.2-2' }}
+            </strong>
           </div>
 
-          <div class="item-info">
-            <strong>{{ c.nome }}</strong>
-            <span>Conta manual</span>
-          </div>
+          <p class="empty-hint" *ngIf="contas.length === 0">Nenhuma conta cadastrada.</p>
 
-          <strong class="item-value" [class.negativo]="c.saldo < 0" [class.positivo]="c.saldo >= 0">
-            R$ {{ c.saldo | number:'1.2-2' }}
-          </strong>
-        </div>
-
-        <p class="empty-hint" *ngIf="contas.length === 0">Nenhuma conta cadastrada.</p>
-
-        <a class="btn-manage" routerLink="/contas">Gerenciar contas</a>
+          <a class="btn-manage" routerLink="/contas">Gerenciar contas</a>
+        </ng-container>
       </div>
 
       <!-- CONTAS A PAGAR -->
       <div class="card">
-        <h3 class="section-title">Contas a pagar</h3>
+        <div class="card-title-row">
+          <h3 class="section-title no-border">Contas a pagar</h3>
 
-        <a *ngFor="let l of contasAPagar" class="list-item" [class.clickable]="!!l.faturaId"
-          [routerLink]="l.faturaId ? ['/fatura', l.faturaId] : null">
-          <div class="item-icon" [style.background]="l.cor || '#9aa0a6'">
-            <span class="material-icons">{{ l.icone || 'receipt_long' }}</span>
-          </div>
+          <button type="button" class="btn-collapse" (click)="toggleCard('contasAPagar')"
+            [title]="cardFechado('contasAPagar') ? 'Expandir' : 'Recolher'">
+            <span class="material-icons">{{ cardFechado('contasAPagar') ? 'expand_more' : 'expand_less' }}</span>
+          </button>
+        </div>
 
-          <div class="item-info">
-            <strong>{{ l.descricao || 'Sem descrição' }}</strong>
-            <span>{{ l.data.split('-').reverse().join('/') }}</span>
-          </div>
+        <ng-container *ngIf="!cardFechado('contasAPagar')">
+          <a *ngFor="let l of contasAPagar" class="list-item" [class.clickable]="!!l.faturaId"
+            [routerLink]="l.faturaId ? ['/fatura', l.faturaId] : null">
+            <div class="item-icon" [style.background]="l.cor || '#9aa0a6'">
+              <span class="material-icons">{{ l.icone || 'receipt_long' }}</span>
+            </div>
 
-          <strong class="item-value negativo">R$ {{ l.valor | number:'1.2-2' }}</strong>
-        </a>
+            <div class="item-info">
+              <strong>{{ l.descricao || 'Sem descrição' }}</strong>
+              <span>{{ l.data.split('-').reverse().join('/') }}</span>
+            </div>
 
-        <p class="empty-hint" *ngIf="contasAPagar.length === 0">Nenhuma conta a pagar em aberto.</p>
+            <strong class="item-value negativo">R$ {{ l.valor | number:'1.2-2' }}</strong>
+          </a>
+
+          <p class="empty-hint" *ngIf="contasAPagar.length === 0">Nenhuma conta a pagar em aberto.</p>
+        </ng-container>
       </div>
 
     </div>
@@ -119,6 +137,84 @@
 
     <!-- COLUNA DIREITA -->
     <div class="column">
+
+      <!-- TOP CATEGORIAS -->
+      <div class="card">
+        <div class="card-title-row">
+          <h3 class="section-title no-border">Top categorias do mês atual</h3>
+
+          <button type="button" class="btn-collapse" (click)="toggleCard('topCategorias')"
+            [title]="cardFechado('topCategorias') ? 'Expandir' : 'Recolher'">
+            <span class="material-icons">{{ cardFechado('topCategorias') ? 'expand_more' : 'expand_less' }}</span>
+          </button>
+        </div>
+
+        <!--
+          [hidden] em vez de *ngIf — tanto no card quanto aqui dentro: o
+          gráfico ECharts precisa que #graficoCategorias exista no DOM
+          desde o primeiro render (senão a referência fica indefinida e o
+          gráfico nunca é criado), e não pode ser destruído/recriado toda
+          hora que o card fecha/abre.
+        -->
+        <div [hidden]="cardFechado('topCategorias')">
+          <div class="categorias-content">
+            <div class="categorias-legenda">
+              <div class="gasto-item" *ngFor="let g of topCategorias">
+                <span class="dot" [style.background]="g.cor || '#9aa0a6'"></span>
+                <span class="gasto-nome">{{ g.nome }}</span>
+                <span class="gasto-percentual">{{ g.percentual | number:'1.0-0' }}%</span>
+              </div>
+
+              <p class="empty-hint" *ngIf="topCategorias.length === 0">Nenhuma despesa neste mês.</p>
+            </div>
+
+            <div class="categorias-grafico" #graficoCategorias></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIMITES -->
+      <div class="card">
+        <div class="card-title-row">
+          <h3 class="section-title no-border">Limites do mês atual</h3>
+
+          <button type="button" class="btn-collapse" (click)="toggleCard('limites')"
+            [title]="cardFechado('limites') ? 'Expandir' : 'Recolher'">
+            <span class="material-icons">{{ cardFechado('limites') ? 'expand_more' : 'expand_less' }}</span>
+          </button>
+        </div>
+
+        <ng-container *ngIf="!cardFechado('limites')">
+          <div class="limite-item" *ngFor="let l of limitesResumo">
+            <div class="limite-ring-wrap">
+              <svg class="limite-ring" viewBox="0 0 40 40">
+                <circle class="ring-bg" cx="20" cy="20" r="16"></circle>
+                <circle class="ring-progress" [class.safe]="classeLimite(l) === 'safe'"
+                  [class.warning]="classeLimite(l) === 'warning'" [class.danger]="classeLimite(l) === 'danger'"
+                  cx="20" cy="20" r="16" [attr.stroke-dasharray]="ringCircunferencia"
+                  [attr.stroke-dashoffset]="ringDashOffset(l)"></circle>
+              </svg>
+
+              <span class="material-icons limite-ring-icon">{{ l.icone || 'category' }}</span>
+            </div>
+
+            <div class="item-info">
+              <strong>{{ l.nome }}</strong>
+              <span>Limite: R$ {{ l.valor_limite | number:'1.2-2' }}</span>
+              <span>Gasto: R$ {{ l.gasto | number:'1.2-2' }}</span>
+            </div>
+
+            <strong class="limite-percentual" [class.safe]="classeLimite(l) === 'safe'"
+              [class.warning]="classeLimite(l) === 'warning'" [class.danger]="classeLimite(l) === 'danger'">
+              {{ percentualLimite(l) | number:'1.0-0' }}%
+            </strong>
+          </div>
+
+          <p class="empty-hint" *ngIf="limitesResumo.length === 0">Nenhum limite definido neste mês.</p>
+
+          <a class="btn-manage" routerLink="/limites">Gerenciar limites</a>
+        </ng-container>
+      </div>
 
       <!-- FATURAS -->
       <div class="card">
@@ -130,56 +226,49 @@
             </strong>
           </div>
 
-          <button type="button" class="btn-eye" (click)="mostrarFaturas = !mostrarFaturas">
-            <span class="material-icons">{{ mostrarFaturas ? 'visibility' : 'visibility_off' }}</span>
-          </button>
-        </div>
+          <div class="card-header-actions">
+            <button type="button" class="btn-eye" (click)="mostrarFaturas = !mostrarFaturas">
+              <span class="material-icons">{{ mostrarFaturas ? 'visibility' : 'visibility_off' }}</span>
+            </button>
 
-        <h3 class="section-title">Meus cartões</h3>
-
-        <div *ngFor="let c of cartoes" class="cartao-block">
-          <div class="list-item">
-            <div class="item-icon" [style.background]="c.cor || '#4285f4'">
-              <span class="material-icons">{{ c.icone || 'credit_card' }}</span>
-            </div>
-
-            <div class="item-info">
-              <strong>{{ c.nome }}</strong>
-              <span>Cartão manual</span>
-            </div>
-          </div>
-
-          <div class="cartao-detalhe">
-            <div>
-              <span>Limite disponível</span>
-              <strong>R$ {{ c.limiteDisponivel | number:'1.2-2' }}</strong>
-            </div>
-            <div>
-              <span>Fatura atual {{ c.faturaVencimento ? '(Venc. ' + c.faturaVencimento.split('-').reverse().join('/') + ')' : '' }}</span>
-              <strong>R$ {{ c.faturaTotal | number:'1.2-2' }}</strong>
-            </div>
+            <button type="button" class="btn-collapse" (click)="toggleCard('faturas')"
+              [title]="cardFechado('faturas') ? 'Expandir' : 'Recolher'">
+              <span class="material-icons">{{ cardFechado('faturas') ? 'expand_more' : 'expand_less' }}</span>
+            </button>
           </div>
         </div>
 
-        <p class="empty-hint" *ngIf="cartoes.length === 0">Nenhum cartão cadastrado.</p>
+        <ng-container *ngIf="!cardFechado('faturas')">
+          <h3 class="section-title">Meus cartões</h3>
 
-        <a class="btn-manage" routerLink="/cartoes">Gerenciar cartões</a>
-      </div>
+          <div *ngFor="let c of cartoes" class="cartao-block">
+            <div class="list-item">
+              <div class="item-icon" [style.background]="c.cor || '#4285f4'">
+                <span class="material-icons">{{ c.icone || 'credit_card' }}</span>
+              </div>
 
-      <!-- MAIORES GASTOS -->
-      <div class="card">
-        <h3 class="section-title">Maiores gastos do mês atual</h3>
+              <div class="item-info">
+                <strong>{{ c.nome }}</strong>
+                <span>Cartão manual</span>
+              </div>
+            </div>
 
-        <div class="gastos-list" *ngIf="maioresGastos.length > 0">
-          <div class="gasto-item" *ngFor="let g of maioresGastos">
-            <span class="dot" [style.background]="g.cor || '#9aa0a6'"></span>
-            <span class="gasto-nome">{{ g.nome }}</span>
-            <span class="gasto-percentual">{{ g.percentual | number:'1.0-0' }}%</span>
-            <strong class="gasto-valor">R$ {{ g.total | number:'1.2-2' }}</strong>
+            <div class="cartao-detalhe">
+              <div>
+                <span>Limite disponível</span>
+                <strong>R$ {{ c.limiteDisponivel | number:'1.2-2' }}</strong>
+              </div>
+              <div>
+                <span>Fatura atual {{ c.faturaVencimento ? '(Venc. ' + c.faturaVencimento.split('-').reverse().join('/') + ')' : '' }}</span>
+                <strong>R$ {{ c.faturaTotal | number:'1.2-2' }}</strong>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <p class="empty-hint" *ngIf="maioresGastos.length === 0">Nenhuma despesa neste mês.</p>
+          <p class="empty-hint" *ngIf="cartoes.length === 0">Nenhum cartão cadastrado.</p>
+
+          <a class="btn-manage" routerLink="/cartoes">Gerenciar cartões</a>
+        </ng-container>
       </div>
 
     </div>

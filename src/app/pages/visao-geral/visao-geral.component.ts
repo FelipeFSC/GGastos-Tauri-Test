@@ -1,6 +1,14 @@
-import { Component, OnInit } from "@angular/core";
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, RouterLink } from "@angular/router";
+import * as echarts from "echarts";
 import { DatabaseService, USUARIO_LOCAL_ID, FaturaResumoPeriodo } from "../../services/database.service";
 
 interface Conta {
@@ -49,6 +57,16 @@ interface GastoCategoria {
   percentual: number;
 }
 
+interface LimiteResumo {
+  id: string;
+  categoria_id: string;
+  nome: string;
+  icone: string | null;
+  cor: string | null;
+  valor_limite: number;
+  gasto: number;
+}
+
 const NOMES_MES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
@@ -61,7 +79,10 @@ const NOMES_MES = [
   templateUrl: "./visao-geral.component.html",
   styleUrl: "./visao-geral.component.css",
 })
-export class VisaoGeralComponent implements OnInit {
+export class VisaoGeralComponent implements OnInit, OnDestroy {
+  @ViewChild("graficoCategorias")
+  graficoCategoriasRef?: ElementRef<HTMLDivElement>;
+
   mes = new Date().getMonth() + 1;
   ano = new Date().getFullYear();
 
@@ -78,7 +99,17 @@ export class VisaoGeralComponent implements OnInit {
   contas: ContaResumo[] = [];
   cartoes: CartaoResumo[] = [];
   contasAPagar: ContaAPagar[] = [];
-  maioresGastos: GastoCategoria[] = [];
+  topCategorias: GastoCategoria[] = [];
+  limitesResumo: LimiteResumo[] = [];
+
+  /** Preferência de quais cards o usuário fechou — persistida no localStorage. */
+  cardsFechados: Record<string, boolean> = {};
+
+  /** Raio/circunferência do anel de progresso dos limites (SVG, viewBox 0 0 40 40). */
+  readonly ringCircunferencia = 2 * Math.PI * 16;
+
+  private chartCategorias: echarts.ECharts | null = null;
+  private readonly CHAVE_CARDS_FECHADOS = "ggastos.visaoGeral.cardsFechados";
 
   get nomeMes(): string {
     return NOMES_MES[this.mes - 1];
@@ -88,7 +119,19 @@ export class VisaoGeralComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.saudacao = this.obterSaudacao();
+    this.carregarPreferenciaCards();
     await this.carregar();
+  }
+
+  ngOnDestroy(): void {
+    this.chartCategorias?.dispose();
+  }
+
+  @HostListener("window:resize")
+  onResize(): void {
+    if (this.chartCategorias && !this.chartCategorias.isDisposed()) {
+      this.chartCategorias.resize();
+    }
   }
 
   private obterSaudacao(): string {
@@ -133,7 +176,8 @@ export class VisaoGeralComponent implements OnInit {
       this.carregarContas(),
       this.carregarCartoes(),
       this.carregarContasAPagar(inicio, fim),
-      this.carregarMaioresGastos(inicio, fim),
+      this.carregarTopCategorias(inicio, fim),
+      this.carregarLimitesResumo(),
     ]);
   }
 
@@ -235,7 +279,7 @@ export class VisaoGeralComponent implements OnInit {
     return `${ano}-${mes}-${dia}`;
   }
 
-  private async carregarMaioresGastos(inicio: string, fim: string): Promise<void> {
+  private async carregarTopCategorias(inicio: string, fim: string): Promise<void> {
     const linhas = await this.db.query<{ categoria_id: string; nome: string; cor: string | null; total: number }>(
       `SELECT l.categoria_id, c.nome, c.cor, SUM(l.valor) as total
        FROM lancamentos l
@@ -249,13 +293,187 @@ export class VisaoGeralComponent implements OnInit {
 
     const totalGeral = linhas.reduce((soma, l) => soma + Number(l.total), 0) || 1;
 
-    this.maioresGastos = linhas.map((l) => ({
+    this.topCategorias = linhas.map((l) => ({
       categoria_id: l.categoria_id,
       nome: l.nome,
       cor: l.cor,
       total: Number(l.total),
       percentual: (Number(l.total) / totalGeral) * 100,
     }));
+
+    this.renderizarDonutCategorias();
+  }
+
+  // =====================================================================
+  // GRÁFICO — TOP CATEGORIAS (ECharts)
+  // =====================================================================
+
+  private renderizarDonutCategorias(): void {
+    const elemento = this.graficoCategoriasRef?.nativeElement;
+
+    if (!elemento) {
+      return;
+    }
+
+    if (
+      this.chartCategorias &&
+      (this.chartCategorias.isDisposed() || this.chartCategorias.getDom() !== elemento)
+    ) {
+      this.chartCategorias.dispose();
+      this.chartCategorias = null;
+    }
+
+    if (!this.chartCategorias) {
+      this.chartCategorias = echarts.init(elemento);
+    }
+
+    // Sem rótulos no gráfico em si — ele é pequeno e fica ao lado da
+    // legenda (que já mostra nome + percentual), rótulos aqui só
+    // sobrepõem uns aos outros. O detalhe aparece no tooltip ao passar
+    // o mouse.
+    this.chartCategorias.setOption({
+      tooltip: {
+        trigger: "item",
+        formatter: (parametros: any) =>
+          `${parametros.name}<br/><strong>${parametros.percent}%</strong>`,
+      },
+      series: [
+        {
+          type: "pie",
+          radius: ["55%", "85%"],
+          avoidLabelOverlap: false,
+          label: { show: false },
+          labelLine: { show: false },
+          data: this.topCategorias.map((c) => ({
+            name: c.nome,
+            value: Number(c.total.toFixed(2)),
+            itemStyle: { color: c.cor || "#9aa0a6" },
+          })),
+        },
+      ],
+    });
+
+    this.chartCategorias.resize();
+  }
+
+  // =====================================================================
+  // LIMITES DO MÊS
+  // =====================================================================
+
+  private async carregarLimitesResumo(): Promise<void> {
+    const limites = await this.db.query<{
+      id: string;
+      categoria_id: string;
+      valor_limite: number;
+      nome: string;
+      icone: string | null;
+      cor: string | null;
+    }>(
+      `SELECT l.id, l.categoria_id, l.valor_limite, c.nome, c.icone, c.cor
+       FROM limites_gastos l
+       JOIN categorias c ON c.id = l.categoria_id
+       WHERE l.usuario_id = ? AND l.mes = ? AND l.ano = ?
+       ORDER BY c.nome`,
+      [USUARIO_LOCAL_ID, this.mes, this.ano]
+    );
+
+    const resumo: LimiteResumo[] = [];
+
+    for (const limite of limites) {
+      const resultado = await this.db.query<{ gasto: number }>(
+        `SELECT COALESCE(SUM(valor), 0) AS gasto
+         FROM lancamentos
+         WHERE usuario_id = ?
+           AND tipo = 'despesa'
+           AND CAST(strftime('%m', data) AS INTEGER) = ?
+           AND CAST(strftime('%Y', data) AS INTEGER) = ?
+           AND (
+             categoria_id = ?
+             OR categoria_id IN (
+               SELECT id FROM categorias WHERE categoria_pai_id = ?
+             )
+           )`,
+        [USUARIO_LOCAL_ID, this.mes, this.ano, limite.categoria_id, limite.categoria_id]
+      );
+
+      resumo.push({
+        id: limite.id,
+        categoria_id: limite.categoria_id,
+        nome: limite.nome,
+        icone: limite.icone,
+        cor: limite.cor,
+        valor_limite: Number(limite.valor_limite),
+        gasto: Number(resultado[0]?.gasto ?? 0),
+      });
+    }
+
+    this.limitesResumo = resumo;
+  }
+
+  /** Percentual real (sem limitar em 100) — usado no texto exibido. */
+  percentualLimite(limite: LimiteResumo): number {
+    if (!limite.valor_limite || limite.valor_limite <= 0) {
+      return 0;
+    }
+
+    return (limite.gasto / limite.valor_limite) * 100;
+  }
+
+  classeLimite(limite: LimiteResumo): "safe" | "warning" | "danger" {
+    const percentual = this.percentualLimite(limite);
+
+    if (percentual > 80) {
+      return "danger";
+    }
+
+    if (percentual > 70) {
+      return "warning";
+    }
+
+    return "safe";
+  }
+
+  /** Deslocamento do traço do anel SVG — limitado em 100% (não "estoura" visualmente). */
+  ringDashOffset(limite: LimiteResumo): number {
+    const percentual = Math.min(this.percentualLimite(limite), 100);
+
+    return this.ringCircunferencia - (this.ringCircunferencia * percentual) / 100;
+  }
+
+  // =====================================================================
+  // CARDS RECOLHÍVEIS
+  // =====================================================================
+
+  private carregarPreferenciaCards(): void {
+    try {
+      const salvo = localStorage.getItem(this.CHAVE_CARDS_FECHADOS);
+      this.cardsFechados = salvo ? JSON.parse(salvo) : {};
+    } catch {
+      this.cardsFechados = {};
+    }
+  }
+
+  cardFechado(id: string): boolean {
+    return !!this.cardsFechados[id];
+  }
+
+  toggleCard(id: string): void {
+    this.cardsFechados[id] = !this.cardsFechados[id];
+
+    try {
+      localStorage.setItem(this.CHAVE_CARDS_FECHADOS, JSON.stringify(this.cardsFechados));
+    } catch {
+      // localStorage indisponível — a preferência só vale pra sessão atual.
+    }
+
+    /*
+     * O card de "Top categorias" usa [hidden] em vez de *ngIf (pra não
+     * destruir a instância do ECharts toda vez que fecha/abre) — o
+     * ECharts não recalcula o próprio tamanho sozinho quando o container
+     * volta a ficar visível, então força um resize depois que o Angular
+     * aplicar a mudança de [hidden].
+     */
+    setTimeout(() => this.onResize(), 0);
   }
 
   novoLancamento(tipo: "despesa" | "receita"): void {

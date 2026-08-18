@@ -65,6 +65,51 @@ interface MesResumo {
 	saldo: number;
 }
 
+interface ContaRow {
+	id: string;
+	nome: string;
+	saldo_inicial: number;
+}
+
+interface LancamentoContaRow {
+	id: string;
+	data: string;
+	descricao: string | null;
+	valor: number;
+	tipo: string;
+	categoria_id: string | null;
+}
+
+interface LancamentoConta {
+	id: string;
+	data: string;
+	descricao: string;
+	valor: number;
+	tipo: "receita" | "despesa";
+	categoriaNome: string;
+	tagsNomes: string[];
+	saldoAcumulado: number;
+}
+
+interface TransacaoTag {
+	id: string;
+	data: string;
+	descricao: string;
+	origemNome: string;
+	valor: number;
+	percentualDaTag: number;
+}
+
+interface LinhaTag {
+	tagId: string;
+	nome: string;
+	cor: string;
+	valor: number;
+	percentual: number;
+	transacoes: TransacaoTag[];
+	expandida: boolean;
+}
+
 interface LinhaCategoria {
 	categoriaId: string;
 	nome: string;
@@ -137,6 +182,9 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 	@ViewChild("graficoAcumulado")
 	graficoAcumuladoRef?: ElementRef<HTMLDivElement>;
 
+	@ViewChild("graficoConta")
+	graficoContaRef?: ElementRef<HTMLDivElement>;
+
 	opcoesPeriodo = OPCOES_PERIODO;
 
 	abaAtiva: Aba = "categorias";
@@ -176,20 +224,55 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 	mediaDespesas = 0;
 	mediaSaldo = 0;
 
+	// =========================================================
+	// RELATÓRIO DE CONTA (aba "Contas")
+	// =========================================================
+
+	contas: ContaRow[] = [];
+	contaSelecionadaId = "";
+	anoConta = new Date().getFullYear();
+	carregandoConta = false;
+
+	resumoMensalConta: MesResumo[] = [];
+	mesesComDadosContaCount = 0;
+	totalEntradasConta = 0;
+	totalSaidasConta = 0;
+	saldoAtualConta = 0;
+	lancamentosConta: LancamentoConta[] = [];
+
+	// =========================================================
+	// RELATÓRIO DE TAGS (aba "Tags")
+	// =========================================================
+
+	carregandoTags = false;
+	linhasTag: LinhaTag[] = [];
+	totalComTags = 0;
+
 	private categoriasPorId = new Map<string, CategoriaRow>();
 	private charts: {
 		despesas: echarts.ECharts | null;
 		receitas: echarts.ECharts | null;
 		comparativo: echarts.ECharts | null;
 		acumulado: echarts.ECharts | null;
-	} = { despesas: null, receitas: null, comparativo: null, acumulado: null };
+		conta: echarts.ECharts | null;
+	} = {
+			despesas: null,
+			receitas: null,
+			comparativo: null,
+			acumulado: null,
+			conta: null,
+		};
 
 	constructor(private db: DatabaseService) { }
 
 	async ngOnInit(): Promise<void> {
+		await this.carregarContasDisponiveis();
+
 		await Promise.all([
 			this.carregarRelatorio(),
 			this.carregarEvolucaoAnual(),
+			this.carregarRelatorioConta(),
+			this.carregarRelatorioTags(),
 		]);
 	}
 
@@ -416,7 +499,7 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 		}
 
 		this.periodoAncora = d;
-		this.carregarRelatorio();
+		this.atualizarPeriodo();
 	}
 
 	alternarSeletorPeriodo(): void {
@@ -429,7 +512,7 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 
 		if (tipo !== "personalizado") {
 			this.seletorPeriodoAberto = false;
-			this.carregarRelatorio();
+			this.atualizarPeriodo();
 		}
 	}
 
@@ -439,7 +522,16 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 		}
 
 		this.seletorPeriodoAberto = false;
+		this.atualizarPeriodo();
+	}
+
+	/**
+	 * O período (hoje/semana/mês/.../personalizado) é compartilhado pelas
+	 * abas Categorias e Tags — muda num lugar, recarrega os dois.
+	 */
+	private atualizarPeriodo(): void {
 		this.carregarRelatorio();
+		this.carregarRelatorioTags();
 	}
 
 	// =====================================================================
@@ -583,7 +675,7 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 					const subCategoria = this.categoriasPorId.get(chave);
 					const rotulo =
 						chave === paiId
-							? `${nome} (categoria pai)`
+							? `${nome}`
 							: (subCategoria?.nome ?? "-");
 
 					agrupamentos.push({
@@ -921,6 +1013,290 @@ export class RelatoriosComponent implements OnInit, AfterViewInit, OnDestroy {
 		});
 
 		chart.resize();
+	}
+
+	// =====================================================================
+	// RELATÓRIO DE CONTA (aba "Contas")
+	// =====================================================================
+	//
+	// Estrutura quase igual à Evolução Anual (navegador de ano, cards,
+	// gráfico mensal) — a diferença principal é o filtro por UMA conta em
+	// vez do total geral, e a lista de lançamentos com saldo acumulado no
+	// final.
+
+	private async carregarContasDisponiveis(): Promise<void> {
+		this.contas = await this.db.query<ContaRow>(
+			`SELECT id, nome, saldo_inicial FROM contas WHERE usuario_id = ? ORDER BY nome`,
+			[USUARIO_LOCAL_ID],
+		);
+
+		if (!this.contaSelecionadaId && this.contas.length) {
+			this.contaSelecionadaId = this.contas[0].id;
+		}
+	}
+
+	async selecionarConta(contaId: string): Promise<void> {
+		this.contaSelecionadaId = contaId;
+		await this.carregarRelatorioConta();
+	}
+
+	anoContaAnterior(): void {
+		this.anoConta--;
+		this.carregarRelatorioConta();
+	}
+
+	anoContaProximo(): void {
+		this.anoConta++;
+		this.carregarRelatorioConta();
+	}
+
+	async carregarRelatorioConta(): Promise<void> {
+		if (!this.contaSelecionadaId) {
+			this.lancamentosConta = [];
+			this.resumoMensalConta = [];
+			this.mesesComDadosContaCount = 0;
+			this.totalEntradasConta = 0;
+			this.totalSaidasConta = 0;
+			this.saldoAtualConta = 0;
+			return;
+		}
+
+		this.carregandoConta = true;
+
+		const conta = this.contas.find((c) => c.id === this.contaSelecionadaId);
+
+		// Saldo real (all-time, só confirmados) — mesma regra de
+		// obterSaldoConta(), pra bater com o que a Visão Geral mostra.
+		this.saldoAtualConta = await this.db.obterSaldoConta(this.contaSelecionadaId);
+
+		if (!this.categoriasPorId.size) {
+			const categorias = await this.db.query<CategoriaRow>(
+				`SELECT id, nome, tipo, icone, cor, categoria_pai_id FROM categorias WHERE usuario_id = ?`,
+				[USUARIO_LOCAL_ID],
+			);
+			this.categoriasPorId = new Map(categorias.map((c) => [c.id, c]));
+		}
+
+		// Todo o histórico confirmado da conta, mais antigo primeiro — é o
+		// que dá pra calcular o saldo acumulado corretamente (ele parte do
+		// saldo_inicial e cresce/diminui em ordem cronológica real, não só
+		// dentro do ano selecionado).
+		const todos = await this.db.query<LancamentoContaRow>(
+			`SELECT id, data, descricao, valor, tipo, categoria_id
+       FROM lancamentos
+       WHERE usuario_id = ? AND conta_id = ? AND confirmado = 1
+       ORDER BY data ASC`,
+			[USUARIO_LOCAL_ID, this.contaSelecionadaId],
+		);
+
+		const tagsPorLancamento = await this.db.obterTagsPorLancamentos(
+			todos.map((l) => l.id),
+		);
+
+		let acumulado = conta?.saldo_inicial ?? 0;
+
+		const comSaldo: LancamentoConta[] = todos.map((l) => {
+			acumulado += l.tipo === "receita" ? l.valor : -l.valor;
+
+			return {
+				id: l.id,
+				data: l.data,
+				descricao: l.descricao || "(sem descrição)",
+				valor: l.valor,
+				tipo: l.tipo as "receita" | "despesa",
+				categoriaNome: l.categoria_id
+					? (this.categoriasPorId.get(l.categoria_id)?.nome ?? "Sem categoria")
+					: "Sem categoria",
+				tagsNomes: (tagsPorLancamento[l.id] ?? []).map((t) => t.nome),
+				saldoAcumulado: acumulado,
+			};
+		});
+
+		const prefixoAno = `${this.anoConta}`;
+
+		// Mais recente primeiro na lista, mantendo o saldo acumulado já
+		// calculado cronologicamente.
+		this.lancamentosConta = comSaldo
+			.filter((l) => l.data.startsWith(prefixoAno))
+			.slice()
+			.reverse();
+
+		const doAno = todos.filter((l) => l.data.startsWith(prefixoAno));
+
+		const resumo: MesResumo[] = Array.from({ length: 12 }, (_, i) => ({
+			mes: i + 1,
+			receitas: 0,
+			despesas: 0,
+			saldo: 0,
+		}));
+
+		for (const l of doAno) {
+			const indice = Number(l.data.substring(5, 7)) - 1;
+
+			if (indice < 0 || indice > 11) {
+				continue;
+			}
+
+			if (l.tipo === "receita") {
+				resumo[indice].receitas += l.valor;
+			} else {
+				resumo[indice].despesas += l.valor;
+			}
+		}
+
+		for (const item of resumo) {
+			item.saldo = item.receitas - item.despesas;
+		}
+
+		this.resumoMensalConta = resumo;
+		this.mesesComDadosContaCount = resumo.filter(
+			(m) => m.receitas > 0 || m.despesas > 0,
+		).length;
+		this.totalEntradasConta = resumo.reduce((soma, m) => soma + m.receitas, 0);
+		this.totalSaidasConta = resumo.reduce((soma, m) => soma + m.despesas, 0);
+
+		this.carregandoConta = false;
+
+		setTimeout(() => this.renderizarGraficoConta(), 0);
+	}
+
+	nomeContaSelecionada(): string {
+		return this.contas.find((c) => c.id === this.contaSelecionadaId)?.nome ?? "";
+	}
+
+	private renderizarGraficoConta(): void {
+		const elemento = this.graficoContaRef?.nativeElement;
+
+		if (!elemento) {
+			return;
+		}
+
+		let chart = this.charts.conta;
+
+		if (chart && (chart.isDisposed() || chart.getDom() !== elemento)) {
+			chart.dispose();
+			chart = null;
+		}
+
+		if (!chart) {
+			chart = echarts.init(elemento);
+			this.charts.conta = chart;
+		}
+
+		chart.setOption({
+			tooltip: { trigger: "axis" },
+			legend: { data: ["Entradas", "Saídas"], bottom: 0 },
+			grid: { left: 48, right: 16, top: 24, bottom: 40 },
+			xAxis: {
+				type: "category",
+				data: NOMES_MES_ABREV,
+			},
+			yAxis: {
+				type: "value",
+				axisLabel: { formatter: (v: number) => `R$ ${v / 1000}k` },
+			},
+			series: [
+				{
+					name: "Entradas",
+					type: "bar",
+					data: this.resumoMensalConta.map((m) => Number(m.receitas.toFixed(2))),
+					color: COR_RECEITA,
+				},
+				{
+					name: "Saídas",
+					type: "bar",
+					data: this.resumoMensalConta.map((m) => Number(m.despesas.toFixed(2))),
+					color: COR_DESPESA,
+				},
+			],
+		});
+
+		chart.resize();
+	}
+
+	// =====================================================================
+	// RELATÓRIO DE TAGS (aba "Tags")
+	// =====================================================================
+
+	async carregarRelatorioTags(): Promise<void> {
+		this.carregandoTags = true;
+
+		const { inicio, fim } = this.intervalo;
+		const inicioISO = this.formatarISO(inicio);
+		const fimISO = this.formatarISO(fim);
+
+		const linhas = await this.db.query<{
+			id: string;
+			data: string;
+			descricao: string | null;
+			valor: number;
+			origemNome: string | null;
+			tagId: string;
+			tagNome: string;
+		}>(
+			`SELECT
+         l.id, l.data, l.descricao, l.valor,
+         COALESCE(c.nome, cc.nome, '-') as origemNome,
+         t.id as tagId, t.nome as tagNome
+       FROM lancamentos l
+       JOIN lancamentos_tags lt ON lt.lancamento_id = l.id
+       JOIN tags t ON t.id = lt.tag_id
+       LEFT JOIN contas c ON c.id = l.conta_id
+       LEFT JOIN cartoes_credito cc ON cc.id = l.cartao_id
+       WHERE l.usuario_id = ? AND l.tipo = 'despesa' AND l.data >= ? AND l.data <= ?
+       ORDER BY l.data DESC`,
+			[USUARIO_LOCAL_ID, inicioISO, fimISO],
+		);
+
+		const grupos = new Map<string, { nome: string; itens: typeof linhas }>();
+
+		for (const linha of linhas) {
+			if (!grupos.has(linha.tagId)) {
+				grupos.set(linha.tagId, { nome: linha.tagNome, itens: [] });
+			}
+
+			grupos.get(linha.tagId)!.itens.push(linha);
+		}
+
+		const linhasTag: LinhaTag[] = Array.from(grupos.entries()).map(
+			([tagId, grupo], indice) => {
+				const valor = grupo.itens.reduce((soma, l) => soma + Number(l.valor), 0);
+
+				return {
+					tagId,
+					nome: grupo.nome,
+					cor: PALETA_PADRAO[indice % PALETA_PADRAO.length],
+					valor,
+					percentual: 0,
+					transacoes: grupo.itens.map((l) => ({
+						id: l.id,
+						data: l.data,
+						descricao: l.descricao || "(sem descrição)",
+						origemNome: l.origemNome || "-",
+						valor: Number(l.valor),
+						percentualDaTag: valor > 0 ? (Number(l.valor) / valor) * 100 : 0,
+					})),
+					expandida: false,
+				};
+			},
+		);
+
+		linhasTag.sort((a, b) => b.valor - a.valor);
+
+		const total = linhasTag.reduce((soma, l) => soma + l.valor, 0);
+
+		for (const linha of linhasTag) {
+			linha.percentual = total > 0 ? (linha.valor / total) * 100 : 0;
+		}
+
+		this.linhasTag = linhasTag;
+		this.totalComTags = total;
+
+		this.carregandoTags = false;
+	}
+
+	alternarExpansaoTag(linha: LinhaTag): void {
+		linha.expandida = !linha.expandida;
 	}
 
 	// =====================================================================

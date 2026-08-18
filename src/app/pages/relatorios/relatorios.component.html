@@ -29,9 +29,9 @@
 
     <div class="seletor-data">
 
-        <!-- CATEGORIAS: período livre (hoje/semana/mês/.../personalizado) -->
+        <!-- CATEGORIAS e TAGS: período livre (hoje/semana/mês/.../personalizado), compartilhado -->
 
-        <div class="navegador-periodo" *ngIf="abaAtiva === 'categorias'">
+        <div class="navegador-periodo" *ngIf="abaAtiva === 'categorias' || abaAtiva === 'tags'">
             <button class="seta" [disabled]="!podeNavegar()" (click)="navegarPeriodo(-1)">
                 <span class="material-icons">chevron_left</span>
             </button>
@@ -82,6 +82,20 @@
             <strong>{{ anoEvolucao }}</strong>
 
             <button class="seta" (click)="anoEvolucaoProximo()">
+                <span class="material-icons">chevron_right</span>
+            </button>
+        </div>
+
+        <!-- CONTAS: navegador de ano + seletor de conta -->
+
+        <div class="navegador-ano" *ngIf="abaAtiva === 'contas'">
+            <button class="seta" (click)="anoContaAnterior()">
+                <span class="material-icons">chevron_left</span>
+            </button>
+
+            <strong>{{ anoConta }}</strong>
+
+            <button class="seta" (click)="anoContaProximo()">
                 <span class="material-icons">chevron_right</span>
             </button>
         </div>
@@ -398,6 +412,230 @@
                                 R$ {{ formatarMoeda(mediaSaldo) }}
                             </td>
                             <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ABA: CONTAS -->
+
+    <div class="conteudo-aba" [hidden]="abaAtiva !== 'contas'">
+
+        <div class="cabecalho-evolucao">
+            <div>
+                <h3>Relatório de Conta</h3>
+                <p>Movimentações, entradas, saídas e saldo</p>
+            </div>
+
+            <div class="acoes-direita" *ngIf="contas.length">
+                <select class="select-conta" [(ngModel)]="contaSelecionadaId"
+                    (ngModelChange)="selecionarConta($event)">
+                    <option *ngFor="let c of contas" [value]="c.id">{{ c.nome }}</option>
+                </select>
+            </div>
+        </div>
+
+        <p class="vazio" *ngIf="contas.length === 0">
+            Nenhuma conta cadastrada.
+        </p>
+
+        <ng-container *ngIf="contas.length">
+
+            <div class="carregando" *ngIf="carregandoConta">
+                Carregando...
+            </div>
+
+            <!-- CARDS -->
+
+            <div class="cards-evolucao cards-conta">
+                <div class="card-evolucao">
+                    <span class="icone-card receita">
+                        <span class="material-icons">trending_up</span>
+                    </span>
+                    <div>
+                        <span class="rotulo-card">Entradas {{ anoConta }}</span>
+                        <strong class="valor-card positivo">R$ {{ formatarMoeda(totalEntradasConta) }}</strong>
+                    </div>
+                </div>
+
+                <div class="card-evolucao">
+                    <span class="icone-card despesa">
+                        <span class="material-icons">trending_down</span>
+                    </span>
+                    <div>
+                        <span class="rotulo-card">Saídas {{ anoConta }}</span>
+                        <strong class="valor-card negativo">R$ {{ formatarMoeda(totalSaidasConta) }}</strong>
+                    </div>
+                </div>
+
+                <div class="card-evolucao">
+                    <span class="icone-card acumulado">
+                        <span class="material-icons">account_balance_wallet</span>
+                    </span>
+                    <div>
+                        <span class="rotulo-card">Saldo atual</span>
+                        <strong class="valor-card" [class.positivo]="saldoAtualConta >= 0"
+                            [class.negativo]="saldoAtualConta < 0">
+                            R$ {{ formatarMoeda(saldoAtualConta) }}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRÁFICO -->
+
+            <div class="bloco-relatorio bloco-cheio">
+                <div class="cabecalho-bloco">
+                    <h4>Visão por Período</h4>
+                    <p>Entradas e saídas mensais de {{ nomeContaSelecionada() }} em {{ anoConta }}</p>
+                </div>
+
+                <div class="grafico-linha" #graficoConta></div>
+            </div>
+
+            <!-- LANÇAMENTOS -->
+
+            <div class="bloco-relatorio bloco-cheio">
+                <div class="cabecalho-bloco">
+                    <h4>Lançamentos</h4>
+                    <p>{{ lancamentosConta.length }} registro(s)</p>
+                </div>
+
+                <div class="tabela-resumo-wrap">
+                    <table class="tabela-resumo">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Valor</th>
+                                <th>Saldo</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr *ngFor="let l of lancamentosConta">
+                                <td>{{ l.data.split('-').reverse().join('/') }}</td>
+                                <td class="celula-descricao">
+                                    <strong>{{ l.descricao }}</strong>
+                                    <span class="tag-chip" *ngFor="let tag of l.tagsNomes">{{ tag }}</span>
+                                </td>
+                                <td>{{ l.categoriaNome }}</td>
+                                <td [class.positivo]="l.tipo === 'receita'" [class.negativo]="l.tipo === 'despesa'">
+                                    {{ l.tipo === "receita" ? "+" : "-" }}R$ {{ formatarMoeda(l.valor) }}
+                                </td>
+                                <td [class.positivo]="l.saldoAcumulado >= 0" [class.negativo]="l.saldoAcumulado < 0">
+                                    R$ {{ formatarMoeda(l.saldoAcumulado) }}
+                                </td>
+                            </tr>
+
+                            <tr *ngIf="lancamentosConta.length === 0">
+                                <td colspan="5" class="vazio">Nenhum lançamento confirmado em {{ anoConta }}.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </ng-container>
+
+    </div>
+
+
+    <!-- ABA: TAGS -->
+
+    <div class="conteudo-aba" [hidden]="abaAtiva !== 'tags'">
+
+        <div class="barra-acoes">
+            <div class="titulo-secao">
+                <h3>Relatório de Tags</h3>
+            </div>
+        </div>
+
+        <p class="nota-cartao">
+            Distribuição de gastos por etiqueta e lançamentos vinculados
+        </p>
+
+        <div class="carregando" *ngIf="carregandoTags">
+            Carregando...
+        </div>
+
+        <!-- TOTAL + BARRA PROPORCIONAL -->
+
+        <div class="bloco-relatorio bloco-cheio">
+            <div class="tags-total-row">
+                <span class="rotulo-card">Total com tags</span>
+                <strong class="valor-card">R$ {{ formatarMoeda(totalComTags) }}</strong>
+            </div>
+
+            <div class="tags-barra" *ngIf="linhasTag.length">
+                <span class="tags-barra-segmento" *ngFor="let l of linhasTag" [style.width.%]="l.percentual"
+                    [style.background]="l.cor" [title]="l.nome + ' · ' + formatarPercentual(l.percentual)"></span>
+            </div>
+
+            <div class="tags-legenda" *ngIf="linhasTag.length">
+                <span class="tags-legenda-item" *ngFor="let l of linhasTag">
+                    <span class="dot" [style.background]="l.cor"></span>
+                    {{ l.nome }}
+                </span>
+            </div>
+
+            <p class="vazio" *ngIf="linhasTag.length === 0">
+                Nenhuma despesa com tag nesse período.
+            </p>
+        </div>
+
+        <!-- LISTA DE TAGS (clique expande os lançamentos) -->
+
+        <div class="tag-card" *ngFor="let linha of linhasTag; let i = index">
+            <button type="button" class="tag-card-cabecalho" (click)="alternarExpansaoTag(linha)">
+                <span class="tag-numero">{{ (i + 1) < 10 ? "0" + (i + 1) : (i + 1) }}</span>
+
+                <span class="tag-nome">{{ linha.nome }}</span>
+
+                <span class="tag-info">{{ linha.transacoes.length }} lançamento(s)</span>
+                <span class="tag-info">{{ formatarPercentual(linha.percentual) }}</span>
+                <strong class="tag-valor">R$ {{ formatarMoeda(linha.valor) }}</strong>
+
+                <span class="material-icons tag-chevron" [class.aberto]="linha.expandida">chevron_right</span>
+            </button>
+
+            <div class="tag-card-barra">
+                <span class="tag-card-barra-fill" [style.width.%]="linha.percentual"
+                    [style.background]="linha.cor"></span>
+            </div>
+
+            <div class="tag-card-detalhe" *ngIf="linha.expandida">
+                <table class="tabela-resumo">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Conta</th>
+                            <th>Valor</th>
+                            <th>% da Tag</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr *ngFor="let t of linha.transacoes">
+                            <td>{{ t.data.split('-').reverse().join('/') }}</td>
+                            <td>{{ t.descricao }}</td>
+                            <td>{{ t.origemNome }}</td>
+                            <td class="negativo">-R$ {{ formatarMoeda(t.valor) }}</td>
+                            <td>{{ formatarPercentual(t.percentualDaTag) }}</td>
+                        </tr>
+                    </tbody>
+
+                    <tfoot>
+                        <tr>
+                            <td colspan="3"><strong>Total da tag</strong></td>
+                            <td class="negativo"><strong>-R$ {{ formatarMoeda(linha.valor) }}</strong></td>
+                            <td><strong>100%</strong></td>
                         </tr>
                     </tfoot>
                 </table>

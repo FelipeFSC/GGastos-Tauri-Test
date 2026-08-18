@@ -180,6 +180,49 @@
   border-top: 1px solid #f0f1f4;
 }
 
+.section-title.no-border {
+  padding-top: 0;
+  border-top: none;
+}
+
+/* CABEÇALHO / RECOLHER */
+
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.card-title-row .section-title {
+  margin-bottom: 0;
+}
+
+.btn-collapse {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  color: #9ca3af;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-collapse:hover {
+  background: #f0f1f4;
+  color: #4b5563;
+}
+
 /* LISTA */
 
 .list-item {
@@ -333,6 +376,134 @@
   text-align: right;
 }
 
+/* TOP CATEGORIAS */
+
+.categorias-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.categorias-legenda {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/*
+ * Cada linha da legenda é uma "mini div": nome num canto, porcentagem
+ * no outro — o nome cresce até empurrar a porcentagem pro final da
+ * PRÓPRIA linha (que já é mais estreita por causa do gráfico ao lado,
+ * sem precisar tirar espaço dele).
+ */
+.categorias-legenda .gasto-item {
+  gap: 8px;
+}
+
+.categorias-legenda .gasto-nome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.categorias-legenda .gasto-percentual {
+  width: auto;
+  text-align: right;
+}
+
+.categorias-grafico {
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+}
+
+/* LIMITES */
+
+.limite-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f1f4;
+}
+
+.limite-item:last-of-type {
+  border-bottom: none;
+}
+
+.limite-item .item-info {
+  gap: 2px;
+}
+
+.limite-ring-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.limite-ring {
+  width: 40px;
+  height: 40px;
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: #eef0f3;
+  stroke-width: 4;
+}
+
+.ring-progress {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+.ring-progress.safe {
+  stroke: #34a853;
+}
+
+.ring-progress.warning {
+  stroke: #fbbc04;
+}
+
+.ring-progress.danger {
+  stroke: #ea4335;
+}
+
+.limite-ring-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.limite-percentual {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.limite-percentual.safe {
+  color: #248a43;
+}
+
+.limite-percentual.warning {
+  color: #b26a00;
+}
+
+.limite-percentual.danger {
+  color: #ea4335;
+}
+
 @media (max-width: 900px) {
   .content-grid {
     grid-template-columns: 1fr;
@@ -341,5 +512,16 @@
   .top-card {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 460px) {
+  .categorias-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .categorias-grafico {
+    width: 100%;
   }
 }
