@@ -1,0 +1,27 @@
+{
+    "despesa": [
+        { "nome": "Alimentação", "icone": "restaurant", "cor": "#e8734a" },
+        { "nome": "Mercado", "icone": "local_grocery_store", "cor": "#43a047" },
+        { "nome": "Transporte", "icone": "directions_car", "cor": "#4285f4" },
+        { "nome": "Moradia", "icone": "home", "cor": "#8d6e63" },
+        { "nome": "Saúde", "icone": "local_hospital", "cor": "#e53935" },
+        { "nome": "Educação", "icone": "school", "cor": "#3f51b5" },
+        { "nome": "Lazer", "icone": "sports_esports", "cor": "#8e44ad" },
+        { "nome": "Compras", "icone": "shopping_bag", "cor": "#ec407a" },
+        { "nome": "Assinaturas", "icone": "subscriptions", "cor": "#00897b" },
+        { "nome": "Contas e serviços", "icone": "receipt_long", "cor": "#607d8b" },
+        { "nome": "Viagem", "icone": "flight", "cor": "#00acc1" },
+        { "nome": "Pets", "icone": "pets", "cor": "#f39c12" },
+        { "nome": "Cuidados pessoais", "icone": "spa", "cor": "#d81b60" },
+        { "nome": "Presentes", "icone": "card_giftcard", "cor": "#c0392b" },
+        { "nome": "Outros", "icone": "category", "cor": "#757575" }
+    ],
+    "receita": [
+        { "nome": "Salário", "icone": "payments", "cor": "#2e7d32" },
+        { "nome": "Freelance / Extra", "icone": "work", "cor": "#1565c0" },
+        { "nome": "Investimentos", "icone": "trending_up", "cor": "#00897b" },
+        { "nome": "Presente recebido", "icone": "redeem", "cor": "#d81b60" },
+        { "nome": "Reembolso", "icone": "replay", "cor": "#f39c12" },
+        { "nome": "Outros", "icone": "category", "cor": "#757575" }
+    ]
+}

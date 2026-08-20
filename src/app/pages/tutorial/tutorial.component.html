@@ -1,0 +1,327 @@
+<div class="tutorial-page">
+    <div class="tutorial-header">
+        <div class="tutorial-header-icon">
+            <span class="material-icons">school</span>
+        </div>
+
+        <div>
+            <h2>Como usar o GGastos</h2>
+            <p>Um guia rápido por todas as telas do sistema — comece pela primeira seção se essa for sua primeira vez aqui.</p>
+        </div>
+    </div>
+
+    <div class="tutorial-layout">
+        <!-- ================================================= -->
+        <!-- NAVEGAÇÃO -->
+        <!-- ================================================= -->
+
+        <nav class="tutorial-nav">
+            <a *ngFor="let secao of secoes" [href]="'#' + secao.id" (click)="irPara($event, secao.id)">
+                <span class="material-icons">{{ secao.icone }}</span>
+                {{ secao.titulo }}
+            </a>
+        </nav>
+
+        <!-- ================================================= -->
+        <!-- CONTEÚDO -->
+        <!-- ================================================= -->
+
+        <div class="tutorial-content">
+            <!-- COMECE POR AQUI -->
+
+            <section id="comece-por-aqui" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">flag</span>
+                    <h3>Comece por aqui</h3>
+                </div>
+
+                <p>
+                    O GGastos é <strong>100% local</strong>: seus dados ficam só neste computador, não existe login
+                    nem conta na nuvem, e o app funciona totalmente offline.
+                </p>
+
+                <div class="tutorial-tip">
+                    <span class="material-icons">lightbulb</span>
+                    <div>
+                        <strong>Excluir nunca apaga seu histórico.</strong>
+                        <span>
+                            Ao excluir uma conta, cartão, categoria ou tag, o item só fica "inativo" — some dos
+                            seletores de lançamento novo, mas os lançamentos antigos continuam intactos e o item pode
+                            ser reativado a qualquer momento na própria tela dele. Contas e cartões têm uma opção
+                            extra: apagar tudo de propósito, se for isso que você realmente quer.
+                        </span>
+                    </div>
+                </div>
+
+                <p>Ordem sugerida pra configurar o sistema pela primeira vez:</p>
+
+                <ol class="tutorial-passos">
+                    <li>Cadastre suas <a routerLink="/contas">contas</a> (carteira, banco...) e, se usar, seus
+                        <a routerLink="/cartoes">cartões de crédito</a>.</li>
+                    <li>Cadastre suas <a routerLink="/categorias">categorias</a> — ou use o botão de categorias
+                        padrão, que já aparece pronto quando não existe nenhuma ainda.</li>
+                    <li>Comece a registrar seus <a routerLink="/lancamentos">lançamentos</a> do dia a dia.</li>
+                </ol>
+            </section>
+
+            <!-- VISÃO GERAL -->
+
+            <section id="visao-geral" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">dashboard</span>
+                    <h3>Visão Geral</h3>
+                </div>
+
+                <p>É a primeira tela que abre — o resumo do mês selecionado, dividido em cartões que você pode recolher clicando na seta de cada um:</p>
+
+                <ul class="tutorial-lista">
+                    <li><strong>Saldo geral</strong> — soma de todas as contas que contam pro saldo (contas marcadas
+                        como "não somar" ficam de fora).</li>
+                    <li><strong>Minhas contas</strong> — saldo atual de cada conta.</li>
+                    <li><strong>Contas a pagar</strong> — despesas ainda não confirmadas do mês + faturas de cartão em
+                        aberto.</li>
+                    <li><strong>Contas a receber</strong> — receitas lançadas mas ainda não confirmadas.</li>
+                    <li><strong>Top categorias do mês</strong> — as 5 categorias com mais despesa, num gráfico.</li>
+                    <li><strong>Limites do mês</strong> — progresso de cada limite de gasto configurado.</li>
+                    <li><strong>Faturas</strong> — valor e vencimento da fatura de cada cartão no mês.</li>
+                </ul>
+
+                <p>Use as setas ao lado do nome do mês pra navegar entre períodos, e os botões "Despesa"/"Receita" no topo pra já abrir o formulário de lançamento direto daqui.</p>
+
+                <a class="tutorial-cta" routerLink="/visao-geral">
+                    Abrir Visão Geral <span class="material-icons">arrow_forward</span>
+                </a>
+            </section>
+
+            <!-- LANÇAMENTOS -->
+
+            <section id="lancamentos" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">receipt_long</span>
+                    <h3>Lançamentos</h3>
+                </div>
+
+                <p>É onde a maior parte do dia a dia acontece — cada linha é uma despesa ou uma receita.</p>
+
+                <ul class="tutorial-lista">
+                    <li><strong>Descrição</strong> é opcional; <strong>valor</strong>, <strong>data</strong>,
+                        <strong>conta/cartão</strong> e <strong>categoria</strong> são obrigatórios.</li>
+                    <li>O botão 👍 ao lado da data marca o lançamento como confirmado (já pago/recebido de verdade) —
+                        isso é o que entra no "Saldo" da tela de Lançamentos e no saldo das contas.</li>
+                    <li>Categoria e conta/cartão abrem num seletor com ícone e cor — só mostram opções ativas
+                        (a categoria também é filtrada pelo tipo: despesa não mistura com categoria de receita).</li>
+                    <li>Use os filtros no topo da lista pra filtrar por tipo, origem ou categoria.</li>
+                </ul>
+
+                <div class="tutorial-tip">
+                    <span class="material-icons">credit_card</span>
+                    <div>
+                        <strong>Despesa no cartão não vira uma linha avulsa.</strong>
+                        <span>
+                            Ela entra direto na fatura daquele mês (calculada automaticamente pelo dia de fechamento
+                            do cartão) — na lista de Lançamentos você vê a fatura inteira como um item só, não cada
+                            compra separada.
+                        </span>
+                    </div>
+                </div>
+
+                <a class="tutorial-cta" routerLink="/lancamentos">
+                    Abrir Lançamentos <span class="material-icons">arrow_forward</span>
+                </a>
+            </section>
+
+            <!-- REPETIR -->
+
+            <section id="repetir" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">repeat</span>
+                    <h3>Repetir (fixo e parcelado)</h3>
+                </div>
+
+                <p>Ao criar um lançamento novo, o botão "Repetir" oferece duas opções:</p>
+
+                <ul class="tutorial-lista">
+                    <li><strong>Fixa</strong> — repete automaticamente até o fim do ano, na frequência que você
+                        escolher (diário, semanal, quinzenal, mensal, bimestral, trimestral, semestral, anual).</li>
+                    <li><strong>Parcelada</strong> — divide o valor total em N parcelas, uma por mês (se a divisão
+                        não for exata, a sobra fica na primeira parcela).</li>
+                </ul>
+
+                <p>Ao editar ou excluir um lançamento que pertence a um desses grupos, o sistema pergunta o escopo:
+                    só esse, esse e os próximos, ou todos — assim você não precisa mexer um por um pra corrigir
+                    uma série inteira.</p>
+            </section>
+
+            <!-- DIVIDIR -->
+
+            <section id="dividir" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">groups</span>
+                    <h3>Dividir uma despesa</h3>
+                </div>
+
+                <p>
+                    Pra quando você paga a conta inteira (uma janta com amigos, por exemplo) e as outras pessoas vão
+                    te devolver a parte delas depois.
+                </p>
+
+                <ul class="tutorial-lista">
+                    <li>Preencha o valor <strong>total</strong> que você pagou, depois clique em "Dividir" (não pode
+                        ser usado junto com "Repetir").</li>
+                    <li>A despesa continua sendo lançada pelo valor cheio. Cada pessoa que você adicionar vira uma
+                        <strong>receita</strong> separada (o contrário numa receita: cada pessoa vira uma
+                        <strong>despesa</strong>), sempre numa conta (nunca cartão) e numa categoria própria pra
+                        isso, escolhidas por você.</li>
+                    <li>"Eu" não é um lançamento — é só a conta de quanto sobra pra você de verdade, depois que todo
+                        mundo te pagar.</li>
+                    <li>O botão "Recalcular" divide o total igualmente entre todo mundo, você incluído.</li>
+                </ul>
+            </section>
+
+            <!-- CONTAS -->
+
+            <section id="contas" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">account_balance_wallet</span>
+                    <h3>Contas</h3>
+                </div>
+
+                <ul class="tutorial-lista">
+                    <li>Cadastre com nome, ícone, cor e um saldo inicial.</li>
+                    <li>"Não somar no saldo geral" tira aquela conta do cálculo do saldo geral da Visão Geral — útil
+                        pra uma conta que você só quer acompanhar separadamente.</li>
+                    <li>Excluir uma conta com lançamentos abre um aviso perguntando se você quer manter o histórico
+                        (a conta só fica oculta) ou apagar tudo de vez.</li>
+                </ul>
+
+                <a class="tutorial-cta" routerLink="/contas">
+                    Abrir Contas <span class="material-icons">arrow_forward</span>
+                </a>
+            </section>
+
+            <!-- CARTÕES -->
+
+            <section id="cartoes" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">credit_card</span>
+                    <h3>Cartões e faturas</h3>
+                </div>
+
+                <ul class="tutorial-lista">
+                    <li>Cadastre limite, dia de fechamento, dia de vencimento e qual conta paga a fatura.</li>
+                    <li>O sistema calcula sozinho em qual fatura cada compra cai, com base no dia de fechamento —
+                        compra depois do fechamento vai pra fatura do mês seguinte.</li>
+                    <li>Se uma despesa passar do limite disponível do cartão, o sistema avisa (mas não bloqueia) na
+                        hora de salvar.</li>
+                    <li>Na tela do cartão, clique em "Ver faturas" pra ver o histórico; clique numa fatura pra abrir
+                        os lançamentos dela e registrar o pagamento.</li>
+                </ul>
+
+                <a class="tutorial-cta" routerLink="/cartoes">
+                    Abrir Cartões <span class="material-icons">arrow_forward</span>
+                </a>
+            </section>
+
+            <!-- CATEGORIAS -->
+
+            <section id="categorias" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">category</span>
+                    <h3>Categorias</h3>
+                </div>
+
+                <ul class="tutorial-lista">
+                    <li>Cada categoria é de despesa <strong>ou</strong> de receita — não dá pra misturar os dois num
+                        lançamento.</li>
+                    <li>Categorias podem ter subcategorias (ex: "Alimentação" com "Mercado" e "Restaurante" dentro).
+                    </li>
+                    <li>Se você está começando agora, o botão "Adicionar categorias padrão" aparece quando não existe
+                        nenhuma categoria cadastrada ainda — ele já cria uma leva pronta de despesas e receitas.</li>
+                    <li>Use o filtro Todas/Despesas/Receitas no topo da lista pra navegar mais rápido.</li>
+                </ul>
+
+                <a class="tutorial-cta" routerLink="/categorias">
+                    Abrir Categorias <span class="material-icons">arrow_forward</span>
+                </a>
+            </section>
+
+            <!-- LIMITES -->
+
+            <section id="limites" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">speed</span>
+                    <h3>Limites de gastos</h3>
+                </div>
+
+                <ul class="tutorial-lista">
+                    <li>Defina um limite mensal por categoria de despesa. O anel de progresso mostra quanto já foi
+                        gasto, somando as subcategorias.</li>
+                    <li>O botão "Importar mês anterior" copia os limites já definidos pro mês atual, sem precisar
+                        redigitar todo mês.</li>
+                </ul>
+
+                <a class="tutorial-cta" routerLink="/limites">
+                    Abrir Limites <span class="material-icons">arrow_forward</span>
+                </a>
+            </section>
+
+            <!-- TAGS -->
+
+            <section id="tags" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">sell</span>
+                    <h3>Tags</h3>
+                </div>
+
+                <p>
+                    Etiquetas livres pra marcar lançamentos que atravessam categorias — por exemplo, uma tag
+                    "Viagem" pode juntar despesas de transporte, alimentação e hospedagem numa mesma viagem, mesmo
+                    estando em categorias diferentes. Dá pra ver o total de uma tag específica nos Relatórios.
+                </p>
+
+                <a class="tutorial-cta" routerLink="/tags">
+                    Abrir Tags <span class="material-icons">arrow_forward</span>
+                </a>
+            </section>
+
+            <!-- RELATÓRIOS -->
+
+            <section id="relatorios" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">bar_chart</span>
+                    <h3>Relatórios</h3>
+                </div>
+
+                <p>
+                    Veja seu histórico com gráficos, filtrando por período — com abas separadas por categoria,
+                    conta e tags, pra enxergar seus gastos de ângulos diferentes.
+                </p>
+
+                <a class="tutorial-cta" routerLink="/relatorios">
+                    Abrir Relatórios <span class="material-icons">arrow_forward</span>
+                </a>
+            </section>
+
+            <!-- IMPORTAR CSV -->
+
+            <section id="importar" class="tutorial-section">
+                <div class="tutorial-section-header">
+                    <span class="material-icons">upload_file</span>
+                    <h3>Importar extrato (CSV)</h3>
+                </div>
+
+                <p>
+                    Acessível pelo botão "Mais opções" (⋮) da tela de Lançamentos — escolha se o extrato é de cartão
+                    ou de banco antes de subir o arquivo.
+                </p>
+
+                <ul class="tutorial-lista">
+                    <li>O sistema detecta parcelamento pelo próprio título do extrato (ex: "Parcela 6/12") e evita
+                        subir a mesma série de novo se ela já foi enviada por inteiro.</li>
+                    <li>A categoria e a conta/cartão escolhidas pra um título ficam memorizadas — da próxima vez que
+                        aquele título aparecer num extrato novo, já vem pré-preenchido.</li>
+                </ul>
+            </section>
+        </div>
+    </div>
+</div>

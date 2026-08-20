@@ -91,4 +91,11 @@ export const routes: Routes = [
       import("./pages/tags/tags.component")
         .then((m) => m.TagsComponent),
   },
+
+  {
+    path: "tutorial",
+    loadComponent: () =>
+      import("./pages/tutorial/tutorial.component")
+        .then((m) => m.TutorialComponent),
+  },
 ];

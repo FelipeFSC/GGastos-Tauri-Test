@@ -1,0 +1,274 @@
+.tutorial-page {
+    padding: 32px;
+    color: #202124;
+    min-height: 100%;
+}
+
+/* ================================================= */
+/* CABEÇALHO */
+/* ================================================= */
+
+.tutorial-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    margin-bottom: 28px;
+}
+
+.tutorial-header-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+
+    border-radius: 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #eef4ff;
+    color: #4285f4;
+}
+
+.tutorial-header-icon .material-icons {
+    font-size: 26px;
+}
+
+.tutorial-header h2 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.tutorial-header p {
+    margin: 6px 0 0;
+    color: #6b7280;
+}
+
+/* ================================================= */
+/* LAYOUT: NAV + CONTEÚDO */
+/* ================================================= */
+
+.tutorial-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.tutorial-nav {
+    position: sticky;
+    top: 76px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    background: #fff;
+    border: 1px solid #e7e9ee;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+    padding: 10px;
+}
+
+.tutorial-nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 9px 10px;
+    border-radius: 8px;
+
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tutorial-nav a:hover {
+    background: #f3f6fb;
+}
+
+.tutorial-nav a .material-icons {
+    font-size: 18px;
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
+/* ================================================= */
+/* CONTEÚDO */
+/* ================================================= */
+
+.tutorial-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    min-width: 0;
+}
+
+.tutorial-section {
+    background: #fff;
+    border: 1px solid #e7e9ee;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+    padding: 24px;
+
+    scroll-margin-top: 76px;
+}
+
+.tutorial-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-bottom: 14px;
+}
+
+.tutorial-section-header .material-icons {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 9px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #eef4ff;
+    color: #4285f4;
+
+    font-size: 18px;
+}
+
+.tutorial-section-header h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.tutorial-section p {
+    margin: 0 0 12px;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.tutorial-section p:last-child {
+    margin-bottom: 0;
+}
+
+.tutorial-section a {
+    color: #4285f4;
+    font-weight: 600;
+}
+
+.tutorial-lista,
+.tutorial-passos {
+    margin: 0 0 12px;
+    padding-left: 20px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.tutorial-lista:last-child,
+.tutorial-passos:last-child {
+    margin-bottom: 0;
+}
+
+/* ================================================= */
+/* DICA */
+/* ================================================= */
+
+.tutorial-tip {
+    display: flex;
+    gap: 10px;
+
+    padding: 12px 14px;
+    margin-bottom: 12px;
+
+    border: 1px solid #f0e0a8;
+    border-radius: 10px;
+
+    background: #fff8e6;
+}
+
+.tutorial-tip .material-icons {
+    color: #a15c00;
+    font-size: 20px;
+}
+
+.tutorial-tip div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    font-size: 13px;
+}
+
+.tutorial-tip strong {
+    color: #202124;
+}
+
+.tutorial-tip span {
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+/* ================================================= */
+/* CHAMADA PRA AÇÃO */
+/* ================================================= */
+
+.tutorial-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #4285f4;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.tutorial-cta .material-icons {
+    font-size: 16px;
+    transition: transform 0.15s;
+}
+
+.tutorial-cta:hover .material-icons {
+    transform: translateX(3px);
+}
+
+/* ================================================= */
+/* RESPONSIVO */
+/* ================================================= */
+
+@media (max-width: 800px) {
+    .tutorial-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .tutorial-nav {
+        position: static;
+
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .tutorial-nav a {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .tutorial-page {
+        padding: 20px;
+    }
+}

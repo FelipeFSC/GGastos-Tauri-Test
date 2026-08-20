@@ -17,6 +17,17 @@ interface Categoria {
     ativo: number;
 }
 
+interface CategoriaPadrao {
+    nome: string;
+    icone: string;
+    cor: string;
+}
+
+interface CategoriasPadraoArquivo {
+    despesa: CategoriaPadrao[];
+    receita: CategoriaPadrao[];
+}
+
 @Component({
     selector: "app-categorias",
     standalone: true,
@@ -26,6 +37,12 @@ interface Categoria {
 })
 export class CategoriasComponent implements OnInit {
     categorias: Categoria[] = [];
+
+    filtroTipo: "todas" | "despesa" | "receita" = "todas";
+    filtroStatus: "ativas" | "inativas" = "ativas";
+
+    /** true enquanto as categorias padrão estão sendo cadastradas (spinner no botão). */
+    carregandoPadrao = false;
 
     // =========================================================
     // NOVA CATEGORIA
@@ -81,14 +98,119 @@ export class CategoriasComponent implements OnInit {
         );
     }
 
+    /** Atende o filtro Ativas/Inativas selecionado (independe do filtro de tipo). */
+    private categoriaAtendeStatus(categoria: Categoria): boolean {
+        return this.filtroStatus === "ativas" ? !!categoria.ativo : !categoria.ativo;
+    }
+
+    /**
+     * Uma categoria principal aparece se ela mesma atende o filtro de
+     * status, OU se alguma subcategoria dela atende — senão, filtrar por
+     * "Inativas" esconderia uma subcategoria inativa presa debaixo de uma
+     * categoria principal ainda ativa.
+     */
     categoriasPrincipais(): Categoria[] {
-        return this.categorias.filter((categoria) => !categoria.categoria_pai_id);
+        return this.categorias.filter((categoria) => {
+            if (categoria.categoria_pai_id) {
+                return false;
+            }
+
+            if (this.filtroTipo !== "todas" && categoria.tipo !== this.filtroTipo) {
+                return false;
+            }
+
+            const subcategoriasDela = this.categorias.filter(
+                (sub) => sub.categoria_pai_id === categoria.id,
+            );
+
+            return (
+                this.categoriaAtendeStatus(categoria) ||
+                subcategoriasDela.some((sub) => this.categoriaAtendeStatus(sub))
+            );
+        });
+    }
+
+    definirFiltroTipo(tipo: "todas" | "despesa" | "receita") {
+        this.filtroTipo = tipo;
+    }
+
+    definirFiltroStatus(status: "ativas" | "inativas") {
+        this.filtroStatus = status;
     }
 
     subcategorias(categoriaPaiId: string): Categoria[] {
         return this.categorias.filter(
-            (categoria) => categoria.categoria_pai_id === categoriaPaiId,
+            (categoria) =>
+                categoria.categoria_pai_id === categoriaPaiId &&
+                this.categoriaAtendeStatus(categoria),
         );
+    }
+
+    // =========================================================
+    // CATEGORIAS PADRÃO (suporte a usuário de primeira viagem)
+    // =========================================================
+
+    /**
+     * Cadastra de uma vez uma leva de categorias já prontas (despesa e
+     * receita), lidas de assets/categorias-padrao.json — só aparece
+     * quando o usuário ainda não tem nenhuma categoria cadastrada.
+     */
+    async adicionarCategoriasPadrao() {
+        if (this.carregandoPadrao) {
+            return;
+        }
+
+        this.carregandoPadrao = true;
+
+        try {
+            const resposta = await fetch("assets/categorias-padrao.json");
+
+            if (!resposta.ok) {
+                throw new Error(
+                    `Erro ao carregar categorias-padrao.json: ${resposta.status}`,
+                );
+            }
+
+            const padrao: CategoriasPadraoArquivo = await resposta.json();
+
+            const todas = [
+                ...padrao.despesa.map((c) => ({ ...c, tipo: "despesa" })),
+                ...padrao.receita.map((c) => ({ ...c, tipo: "receita" })),
+            ];
+
+            await this.db.run("BEGIN TRANSACTION");
+
+            try {
+                for (const categoria of todas) {
+                    await this.db.run(
+                        `INSERT INTO categorias
+                (id, usuario_id, categoria_pai_id, tipo, nome, icone, cor)
+               VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                        [
+                            this.db.gerarId(),
+                            USUARIO_LOCAL_ID,
+                            null,
+                            categoria.tipo,
+                            categoria.nome,
+                            categoria.icone,
+                            categoria.cor,
+                        ],
+                    );
+                }
+
+                await this.db.run("COMMIT");
+            } catch (erro) {
+                await this.db.run("ROLLBACK");
+                throw erro;
+            }
+
+            await this.carregar();
+        } catch (erro) {
+            console.error("Erro ao adicionar categorias padrão:", erro);
+            alert("Não foi possível carregar as categorias padrão.");
+        } finally {
+            this.carregandoPadrao = false;
+        }
     }
 
     // =========================================================

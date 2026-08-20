@@ -106,7 +106,7 @@
                 <!-- REPETIR (lançamento novo: alternável) -->
 
                 <button type="button" class="feature-button" [class.active]="opcoes.repetir"
-                    (click)="alternarOpcao('repetir')" *ngIf="!editarId">
+                    [disabled]="opcoes.dividir" (click)="alternarOpcao('repetir')" *ngIf="!editarId">
                     <span class="feature-icon">
                         <span class="material-icons"> repeat </span>
                     </span>
@@ -127,6 +127,18 @@
                         {{ tipoRepeticaoOriginal === "fixa" ? "Fixa" : "Parcelada" }}
                     </span>
                 </div>
+
+                <!-- DIVIDIR (lançamento novo: alternável) -->
+
+                <button type="button" class="feature-button" [class.active]="opcoes.dividir"
+                    [disabled]="opcoes.repetir" (click)="alternarOpcao('dividir')" *ngIf="!editarId"
+                    title="Você paga tudo, cada pessoa te devolve a parte dela">
+                    <span class="feature-icon">
+                        <span class="material-icons"> groups </span>
+                    </span>
+
+                    <span> Dividir </span>
+                </button>
 
                 <!-- OBSERVAÇÃO -->
 
@@ -289,6 +301,81 @@
                         <span>Só esta ocorrência</span>
                     </button>
                 </div>
+            </div>
+
+            <!-- ================================================= -->
+            <!-- DIVIDIR -->
+            <!-- ================================================= -->
+
+            <div class="divide-panel" *ngIf="opcoes.dividir">
+                <div class="divide-eu">
+                    <span class="material-icons"> person </span>
+
+                    <div class="divide-eu-info">
+                        <strong> Eu </strong>
+                        <span> Depois que todo mundo te pagar </span>
+                    </div>
+
+                    <strong class="divide-eu-valor"> R$ {{ valorFormatado(euDivisao) }} </strong>
+                </div>
+
+                <div class="divide-pessoa" *ngFor="let pessoa of pessoasDivisao">
+                    <input type="text" class="divide-pessoa-nome" [(ngModel)]="pessoa.nome" placeholder="Nome" />
+
+                    <div class="money-input divide-valor">
+                        <span> R$ </span>
+                        <input type="text" [(ngModel)]="pessoa.valor" inputmode="decimal" />
+                    </div>
+
+                    <button type="button" class="option-button confirmado-toggle divide-confirmado"
+                        [class.active]="pessoa.confirmado" title="Já me pagou?"
+                        (click)="pessoa.confirmado = !pessoa.confirmado">
+                        <span class="material-icons"> thumb_up </span>
+                    </button>
+
+                    <button type="button" class="divide-remover" title="Remover pessoa"
+                        (click)="removerPessoaDivisao(pessoa.id)">
+                        <span class="material-icons"> close </span>
+                    </button>
+                </div>
+
+                <div class="divide-acoes">
+                    <button type="button" class="divide-add" (click)="adicionarPessoaDivisao()">
+                        <span class="material-icons"> add </span>
+                        Adicionar pessoa
+                    </button>
+
+                    <button type="button" class="divide-recalcular" *ngIf="pessoasDivisao.length"
+                        (click)="recalcularDivisao()" title="Divide o total igualmente entre todo mundo">
+                        <span class="material-icons"> refresh </span>
+                        Recalcular
+                    </button>
+                </div>
+
+                <p class="divide-aviso" *ngIf="divisaoExcedeTotal">
+                    A soma das partes passou do valor total.
+                </p>
+
+                <ng-container *ngIf="pessoasDivisao.length">
+                    <div class="form-group">
+                        <label> Em qual conta você vai receber * </label>
+
+                        <select [(ngModel)]="contaDivisaoId">
+                            <option value="" disabled>Selecione uma conta</option>
+                            <option *ngFor="let conta of contasDivisaoSelecionaveis" [value]="conta.id">
+                                {{ conta.nome }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label> Categoria de {{ tipoOposto }} * </label>
+
+                        <app-categoria-select [grupos]="gruposCategoriasDivisao" [categoriaId]="categoriaDivisaoId"
+                            (categoriaIdChange)="categoriaDivisaoId = $event">
+                        </app-categoria-select>
+                    </div>
+                </ng-container>
             </div>
 
             <!-- ================================================= -->

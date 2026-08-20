@@ -213,7 +213,13 @@ export class VisaoGeralComponent implements OnInit, OnDestroy {
     for (const cartao of cartoes) {
       const faturas = await this.db.query<{ total: number; data_vencimento: string }>(
         `SELECT f.data_vencimento,
-                COALESCE((SELECT SUM(l.valor) FROM lancamentos l WHERE l.fatura_id = f.id), 0) as total
+                COALESCE((SELECT SUM(
+                  CASE
+                    WHEN l.tipo = 'despesa' THEN l.valor
+                    WHEN l.tipo = 'receita' THEN -l.valor
+                    ELSE 0
+                  END
+                ) FROM lancamentos l WHERE l.fatura_id = f.id), 0) as total
          FROM faturas f
          WHERE f.cartao_id = ? AND f.mes_referencia = ? AND f.ano_referencia = ?`,
         [cartao.id, this.mes, this.ano]

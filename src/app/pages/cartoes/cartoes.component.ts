@@ -116,7 +116,13 @@ export class CartoesComponent implements OnInit {
     async carregarFaturas(cartaoId: string) {
         this.faturasPorCartao[cartaoId] = await this.db.query<Fatura>(
             `SELECT f.*, COALESCE(
-        (SELECT SUM(l.valor)
+        (SELECT SUM(
+           CASE
+             WHEN l.tipo = 'despesa' THEN l.valor
+             WHEN l.tipo = 'receita' THEN -l.valor
+             ELSE 0
+           END
+         )
          FROM lancamentos l
          WHERE l.fatura_id = f.id), 0
        ) as total

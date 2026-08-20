@@ -62,6 +62,66 @@
     font-size: 17px;
 }
 
+.filtros-categorias {
+    margin-left: auto;
+
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filtro-tipo {
+    display: flex;
+    gap: 4px;
+
+    padding: 3px;
+
+    border: 1px solid #e7e9ee;
+    border-radius: 10px;
+
+    background: #f7f9fc;
+}
+
+.filtro-tipo button {
+    padding: 6px 10px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: transparent;
+    color: #6b7280;
+
+    cursor: pointer;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.filtro-tipo button:hover {
+    background: #edf0f3;
+}
+
+.filtro-tipo button.ativo {
+    background: #4285f4;
+    color: white;
+}
+
+.filtro-tipo button.despesa.ativo {
+    background: #a15c00;
+}
+
+.filtro-tipo button.receita.ativo {
+    background: #3c7a3c;
+}
+
+.filtro-tipo button.status-ativas.ativo {
+    background: #3c7a3c;
+}
+
+.filtro-tipo button.status-inativas.ativo {
+    background: #757575;
+}
+
 .card-header p {
     margin: 4px 0 0;
     color: #8a9099;
@@ -550,10 +610,74 @@
     font-size: 14px;
 }
 
-.empty span:last-child {
+.empty-hint {
     margin-top: 5px;
     color: #9ca3af;
     font-size: 13px;
+}
+
+.btn-categorias-padrao {
+    margin-top: 18px;
+
+    height: 40px;
+
+    padding: 0 16px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: #4285f4;
+    color: white;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    transition: 0.2s;
+}
+
+.btn-categorias-padrao:hover:not(:disabled) {
+    background: #3367d6;
+    transform: translateY(-1px);
+}
+
+.btn-categorias-padrao:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
+.btn-categorias-padrao .material-icons {
+    font-size: 18px;
+
+    color: white;
+
+    margin-bottom: 0;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: white;
+    border-radius: 50%;
+
+    animation: girar 0.7s linear infinite;
+}
+
+@keyframes girar {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* RESPONSIVO */

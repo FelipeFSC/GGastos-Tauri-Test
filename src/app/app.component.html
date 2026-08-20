@@ -39,6 +39,18 @@
         <span class="material-icons">sell</span>
         Tags
       </a>
+
+      <div class="gear-menu-divider"></div>
+
+      <a routerLink="/tutorial" routerLinkActive="active" (click)="menuAberto = false">
+        <span class="material-icons">school</span>
+        Tutorial
+      </a>
+
+      <button type="button" (click)="abrirInformacoes()">
+        <span class="material-icons">info</span>
+        Informações
+      </button>
     </div>
   </div>
 
@@ -49,3 +61,42 @@
 <main class="container">
   <router-outlet />
 </main>
+
+<!-- ===================================================== -->
+<!-- INFORMAÇÕES -->
+<!-- ===================================================== -->
+
+<div class="info-overlay" *ngIf="informacoesAberto" (click)="fecharInformacoes()">
+  <div class="info-modal" (click)="$event.stopPropagation()">
+    <div class="info-modal-header">
+      <div class="info-modal-icon">
+        <span class="material-icons">savings</span>
+      </div>
+
+      <div>
+        <h2>ggastos</h2>
+        <p>Versão {{ versaoApp }}</p>
+      </div>
+
+      <button type="button" class="info-modal-close" (click)="fecharInformacoes()" title="Fechar">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="info-modal-body">
+      <label>Onde seus dados são salvos</label>
+
+      <div class="info-caminho">
+        <span class="material-icons">folder</span>
+
+        <span class="info-caminho-texto" *ngIf="!carregandoCaminho">{{ caminhoBanco }}</span>
+        <span class="info-caminho-texto info-caminho-carregando" *ngIf="carregandoCaminho">Carregando...</span>
+      </div>
+
+      <p class="info-hint">
+        O ggastos é 100% local — todos os seus lançamentos ficam só neste computador, nesse arquivo, sem
+        login e sem nuvem.
+      </p>
+    </div>
+  </div>
+</div>

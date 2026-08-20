@@ -75,6 +75,14 @@ interface AnexoForm {
     arquivo: File;
 }
 
+/** Uma "parte" da divisão — vira um lançamento do tipo oposto (quem te paga de volta). */
+interface PessoaDivisao {
+    id: string;
+    nome: string;
+    valor: string;
+    confirmado: boolean;
+}
+
 interface FormLancamento {
     descricao: string;
     valor: string;
@@ -169,7 +177,20 @@ export class LancamentoModalComponent implements OnInit {
         observacao: false,
         anexo: false,
         tags: false,
+        dividir: false,
     };
+
+    /**
+     * "Dividir": você já pagou o valor total, e cada pessoa aqui é a
+     * parte que ela vai te devolver — vira um lançamento do tipo oposto
+     * ao do lançamento principal (despesa → receita, ou o contrário),
+     * sempre numa conta (nunca cartão) e numa categoria à parte. "Eu" não
+     * é um lançamento, é só a diferença (total - soma das pessoas),
+     * mostrada pra referência.
+     */
+    pessoasDivisao: PessoaDivisao[] = [];
+    categoriaDivisaoId = "";
+    contaDivisaoId = "";
 
     frequencias = [
         { valor: "diario", nome: "Diário" },
@@ -265,7 +286,10 @@ export class LancamentoModalComponent implements OnInit {
             observacao: false,
             anexo: false,
             tags: false,
+            dividir: false,
         };
+
+        this.limparDivisao();
 
         this.novaTagId = "";
         this.anexosExistentes = [];
@@ -338,6 +362,7 @@ export class LancamentoModalComponent implements OnInit {
                 observacao: false,
                 anexo: false,
                 tags: false,
+                dividir: false,
             };
         } else {
             this.tipoRepeticaoOriginal = null;
@@ -347,8 +372,12 @@ export class LancamentoModalComponent implements OnInit {
                 observacao: false,
                 anexo: false,
                 tags: false,
+                dividir: false,
             };
         }
+
+        // "Dividir" é só pra lançamento novo — edição nunca abre com isso.
+        this.limparDivisao();
 
         this.novaTagId = "";
 
@@ -384,16 +413,19 @@ export class LancamentoModalComponent implements OnInit {
         this.tipoRepeticaoOriginal = null;
         this.escopoEdicao = "atual";
 
+        this.limparDivisao();
+
         this.salvando = false;
     }
 
-    alternarOpcao(opcao: "repetir" | "observacao" | "anexo" | "tags"): void {
+    alternarOpcao(opcao: "repetir" | "observacao" | "anexo" | "tags" | "dividir"): void {
         /*
-         * Durante edição, a opção "repetir" nunca é alternável por clique:
-         * lançamento único não vira repetição, e lançamento de grupo já
-         * fica sempre com o painel de repetição aberto (travado).
+         * Durante edição, "repetir" e "dividir" nunca são alternáveis por
+         * clique: lançamento único não vira repetição/divisão, e
+         * lançamento de grupo já fica sempre com o painel de repetição
+         * aberto (travado).
          */
-        if (this.editarId && opcao === "repetir") {
+        if (this.editarId && (opcao === "repetir" || opcao === "dividir")) {
             return;
         }
 
@@ -416,6 +448,28 @@ export class LancamentoModalComponent implements OnInit {
             this.form.tipoRepeticao = "fixa";
             this.form.frequencia = "mensal";
             this.form.quantidadeParcelas = 2;
+        }
+
+        /*
+         * Repetir e Dividir são mutuamente exclusivos — ligar um desliga
+         * o outro (e limpa o que já tinha sido preenchido nele).
+         */
+        if (opcao === "repetir" && this.opcoes.repetir && this.opcoes.dividir) {
+            this.opcoes.dividir = false;
+            this.limparDivisao();
+        }
+
+        if (opcao === "dividir") {
+            if (this.opcoes.dividir && this.opcoes.repetir) {
+                this.opcoes.repetir = false;
+                this.form.tipoRepeticao = "fixa";
+                this.form.frequencia = "mensal";
+                this.form.quantidadeParcelas = 2;
+            }
+
+            if (!this.opcoes.dividir) {
+                this.limparDivisao();
+            }
         }
     }
 
@@ -540,6 +594,112 @@ export class LancamentoModalComponent implements OnInit {
     }
 
     // =====================================================================
+    // DIVIDIR
+    // =====================================================================
+
+    /** Tipo oposto ao do lançamento principal — é o tipo de cada "parte" da divisão. */
+    get tipoOposto(): "receita" | "despesa" {
+        return this.tipoModal === "despesa" ? "receita" : "despesa";
+    }
+
+    /** Soma do que já foi preenchido pras pessoas. */
+    get somaPessoasDivisao(): number {
+        return this.pessoasDivisao.reduce(
+            (soma, pessoa) => soma + this.parseValorTexto(pessoa.valor),
+            0,
+        );
+    }
+
+    /** O que sobra pra "Eu" — não é um lançamento, é só o valor mostrado pra referência. */
+    get euDivisao(): number {
+        return Math.round((this.valorNumerico() - this.somaPessoasDivisao) * 100) / 100;
+    }
+
+    get divisaoExcedeTotal(): boolean {
+        return this.somaPessoasDivisao > this.valorNumerico() + 0.001;
+    }
+
+    private limparDivisao(): void {
+        this.pessoasDivisao = [];
+        this.categoriaDivisaoId = "";
+        this.contaDivisaoId = "";
+    }
+
+    /** Nova pessoa já entra com metade do que hoje sobra pro "Eu" — o usuário ajusta depois se quiser. */
+    adicionarPessoaDivisao(): void {
+        const restante = Math.max(this.euDivisao, 0);
+        const metade = Math.floor((restante / 2) * 100) / 100;
+
+        this.pessoasDivisao.push({
+            id: this.gerarId(),
+            nome: "",
+            valor: this.valorFormatado(metade),
+            confirmado: false,
+        });
+    }
+
+    removerPessoaDivisao(id: string): void {
+        this.pessoasDivisao = this.pessoasDivisao.filter((pessoa) => pessoa.id !== id);
+    }
+
+    /** Reseta todo mundo pra uma divisão igual do total (Eu incluído — o que sobra de arredondamento fica com o "Eu"). */
+    recalcularDivisao(): void {
+        const quantidade = this.pessoasDivisao.length + 1;
+
+        if (quantidade < 2) {
+            return;
+        }
+
+        const base = Math.floor((this.valorNumerico() / quantidade) * 100) / 100;
+
+        for (const pessoa of this.pessoasDivisao) {
+            pessoa.valor = this.valorFormatado(base);
+        }
+    }
+
+    /** Ativa, ou é a categoria já escolhida pra divisão. */
+    private categoriaSelecionavelDivisao(categoria: Categoria): boolean {
+        return categoria.ativo !== 0 || categoria.id === this.categoriaDivisaoId;
+    }
+
+    get categoriasPrincipaisDivisao(): Categoria[] {
+        const categoriaSelecionada = this.categorias.find(
+            (categoria) => categoria.id === this.categoriaDivisaoId,
+        );
+
+        const paiDaSelecionada = categoriaSelecionada?.categoria_pai_id;
+
+        return this.categorias.filter(
+            (categoria) =>
+                !categoria.categoria_pai_id &&
+                categoria.tipo === this.tipoOposto &&
+                (this.categoriaSelecionavelDivisao(categoria) || categoria.id === paiDaSelecionada),
+        );
+    }
+
+    subcategoriasDaDivisao(categoriaId: string): Categoria[] {
+        return this.categorias.filter(
+            (categoria) =>
+                categoria.categoria_pai_id === categoriaId &&
+                this.categoriaSelecionavelDivisao(categoria),
+        );
+    }
+
+    get gruposCategoriasDivisao(): GrupoCategoria[] {
+        return this.categoriasPrincipaisDivisao.map((principal) => ({
+            principal,
+            subcategorias: this.subcategoriasDaDivisao(principal.id),
+        }));
+    }
+
+    /** Só contas (nunca cartão — quem te paga de volta cai numa conta, não "credita" um cartão). */
+    get contasDivisaoSelecionaveis(): Conta[] {
+        return this.contas.filter(
+            (conta) => conta.ativo !== 0 || conta.id === this.contaDivisaoId,
+        );
+    }
+
+    // =====================================================================
     // VALORES
     // =====================================================================
 
@@ -550,8 +710,8 @@ export class LancamentoModalComponent implements OnInit {
         });
     }
 
-    valorNumerico(): number {
-        const valor = String(this.form.valor || "")
+    private parseValorTexto(texto: string): number {
+        const valor = String(texto || "")
             .replace(/\s/g, "")
             .replace(/\./g, "")
             .replace(",", ".");
@@ -559,6 +719,10 @@ export class LancamentoModalComponent implements OnInit {
         const numero = Number(valor);
 
         return Number.isFinite(numero) ? numero : 0;
+    }
+
+    valorNumerico(): number {
+        return this.parseValorTexto(this.form.valor);
     }
 
     valorParcela(): number {
@@ -873,6 +1037,37 @@ export class LancamentoModalComponent implements OnInit {
             return;
         }
 
+        if (this.opcoes.dividir && this.pessoasDivisao.length > 0) {
+            for (const pessoa of this.pessoasDivisao) {
+                if (!pessoa.nome.trim()) {
+                    alert("Informe o nome de todas as pessoas na divisão.");
+                    return;
+                }
+
+                if (this.parseValorTexto(pessoa.valor) <= 0) {
+                    alert(`Informe um valor válido para "${pessoa.nome}".`);
+                    return;
+                }
+            }
+
+            if (this.divisaoExcedeTotal) {
+                alert(
+                    `A soma das partes (R$ ${this.valorFormatado(this.somaPessoasDivisao)}) não pode passar do valor total (R$ ${this.valorFormatado(valor)}).`,
+                );
+                return;
+            }
+
+            if (!this.contaDivisaoId) {
+                alert("Selecione em qual conta você vai receber a parte de cada pessoa.");
+                return;
+            }
+
+            if (!this.categoriaDivisaoId) {
+                alert(`Selecione a categoria de ${this.tipoOposto} pra essas partes.`);
+                return;
+            }
+        }
+
         this.salvando = true;
 
         try {
@@ -990,6 +1185,10 @@ export class LancamentoModalComponent implements OnInit {
                     parcela_atual: null,
                     parcela_total: null,
                 });
+
+                if (this.opcoes.dividir && this.pessoasDivisao.length > 0) {
+                    await this.criarLancamentosDivisao(descricao, this.form.data);
+                }
             } else if (this.form.tipoRepeticao === "parcelada") {
 
                 /*
@@ -1152,6 +1351,83 @@ export class LancamentoModalComponent implements OnInit {
         }
 
         await this.salvarAnexosPendentes(lancamento.id);
+    }
+
+    // =====================================================================
+    // DIVIDIR — INSERÇÃO
+    // =====================================================================
+
+    /**
+     * Uma linha por pessoa, cada uma um lançamento independente (sem
+     * grupo_parcelamento_id nenhum — não seguem o lançamento principal
+     * em edições/exclusões futuras, de propósito, pra não complicar o
+     * fluxo de escopo que já existe pro Repetir).
+     */
+    private async criarLancamentosDivisao(descricaoPrincipal: string, data: string): Promise<void> {
+        for (const pessoa of this.pessoasDivisao) {
+            await this.inserirLancamentoSimples({
+                id: this.gerarId(),
+                descricao: `${descricaoPrincipal} - ${pessoa.nome.trim()}`,
+                valor: this.parseValorTexto(pessoa.valor),
+                data,
+                tipo: this.tipoOposto,
+                conta_id: this.contaDivisaoId,
+                categoria_id: this.categoriaDivisaoId,
+                confirmado: pessoa.confirmado ? 1 : 0,
+            });
+        }
+    }
+
+    /** INSERT enxuto — sem observação/tags/anexos (isso fica só no lançamento principal) e sem cartão (sempre conta). */
+    private async inserirLancamentoSimples(lancamento: {
+        id: string;
+        descricao: string;
+        valor: number;
+        data: string;
+        tipo: "receita" | "despesa";
+        conta_id: string;
+        categoria_id: string;
+        confirmado: number;
+    }): Promise<void> {
+        await this.db.run(
+            `INSERT INTO lancamentos (
+        id,
+        usuario_id,
+        descricao,
+        valor,
+        data,
+        tipo,
+        conta_id,
+        cartao_id,
+        fatura_id,
+        categoria_id,
+        confirmado,
+        fixo,
+        frequencia,
+        parcela_atual,
+        parcela_total,
+        grupo_parcelamento_id
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                lancamento.id,
+                USUARIO_LOCAL_ID,
+                lancamento.descricao,
+                lancamento.valor,
+                lancamento.data,
+                lancamento.tipo,
+                lancamento.conta_id,
+                null,
+                null,
+                lancamento.categoria_id,
+                lancamento.confirmado,
+                0,
+                null,
+                null,
+                null,
+                null,
+            ],
+        );
     }
 
     // =====================================================================

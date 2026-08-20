@@ -95,6 +95,37 @@
 						categoria(s) principal(is)
 					</p>
 				</div>
+
+				<div class="filtros-categorias">
+					<div class="filtro-tipo">
+						<button type="button" [class.ativo]="filtroTipo === 'todas'"
+							(click)="definirFiltroTipo('todas')">
+							Todas
+						</button>
+
+						<button type="button" class="despesa" [class.ativo]="filtroTipo === 'despesa'"
+							(click)="definirFiltroTipo('despesa')">
+							Despesas
+						</button>
+
+						<button type="button" class="receita" [class.ativo]="filtroTipo === 'receita'"
+							(click)="definirFiltroTipo('receita')">
+							Receitas
+						</button>
+					</div>
+
+					<div class="filtro-tipo">
+						<button type="button" class="status-ativas" [class.ativo]="filtroStatus === 'ativas'"
+							(click)="definirFiltroStatus('ativas')">
+							Ativas
+						</button>
+
+						<button type="button" class="status-inativas" [class.ativo]="filtroStatus === 'inativas'"
+							(click)="definirFiltroStatus('inativas')">
+							Inativas
+						</button>
+					</div>
+				</div>
 			</div>
 
 			<div class="category-list">
@@ -310,15 +341,36 @@
 				</div>
 
 				<!-- ================================================= -->
-				<!-- VAZIO -->
+				<!-- VAZIO — PRIMEIRO ACESSO (nenhuma categoria no sistema) -->
 				<!-- ================================================= -->
 
-				<div class="empty" *ngIf="categoriasPrincipais().length === 0">
+				<div class="empty empty-primeiro-acesso" *ngIf="categorias.length === 0">
 					<span class="material-icons"> category </span>
 
 					<strong> Nenhuma categoria cadastrada </strong>
 
-					<span> Crie sua primeira categoria ao lado. </span>
+					<span class="empty-hint"> Crie a sua primeira categoria ao lado, ou comece com uma leva pronta. </span>
+
+					<button type="button" class="btn-categorias-padrao" [disabled]="carregandoPadrao"
+						(click)="adicionarCategoriasPadrao()">
+						<span class="spinner" *ngIf="carregandoPadrao"></span>
+
+						<span class="material-icons" *ngIf="!carregandoPadrao"> auto_awesome </span>
+
+						{{ carregandoPadrao ? "Carregando categorias..." : "Adicionar categorias padrão" }}
+					</button>
+				</div>
+
+				<!-- ================================================= -->
+				<!-- VAZIO — FILTRO ATUAL SEM RESULTADO -->
+				<!-- ================================================= -->
+
+				<div class="empty" *ngIf="categorias.length > 0 && categoriasPrincipais().length === 0">
+					<span class="material-icons"> category </span>
+
+					<strong> Nenhuma categoria encontrada </strong>
+
+					<span class="empty-hint"> Nenhuma categoria bate com o filtro selecionado. </span>
 				</div>
 			</div>
 		</section>

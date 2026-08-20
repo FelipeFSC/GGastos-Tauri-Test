@@ -1062,7 +1062,13 @@ export class DatabaseService {
 
     const lancado = await this.db.select(
       `
-      SELECT COALESCE(SUM(l.valor), 0) AS total
+      SELECT COALESCE(SUM(
+        CASE
+          WHEN l.tipo = 'despesa' THEN l.valor
+          WHEN l.tipo = 'receita' THEN -l.valor
+          ELSE 0
+        END
+      ), 0) AS total
       FROM lancamentos l
       JOIN faturas f ON f.id = l.fatura_id
       WHERE f.cartao_id = ? AND f.status != 'paga'
@@ -2011,7 +2017,17 @@ export class DatabaseService {
     for (const fatura of faturas) {
       const [faturaAtualRows, valorPagoRows] = await Promise.all([
         this.db.select(
-          `SELECT COALESCE(SUM(valor), 0) AS total FROM lancamentos WHERE fatura_id = ?`,
+          `
+          SELECT COALESCE(SUM(
+            CASE
+              WHEN tipo = 'despesa' THEN valor
+              WHEN tipo = 'receita' THEN -valor
+              ELSE 0
+            END
+          ), 0) AS total
+          FROM lancamentos
+          WHERE fatura_id = ?
+          `,
           [fatura.id]
         ),
         this.db.select(
