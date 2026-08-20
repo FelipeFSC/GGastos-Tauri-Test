@@ -49,9 +49,9 @@
                     placeholder="Ex.: Salário, mercado, aluguel... (opcional)" />
             </div>
 
-            <!-- VALOR / DATA / JOIA -->
+            <!-- VALOR / DATA (+ JOIA junto da data) -->
 
-            <div class="form-row main-values">
+            <div class="form-row">
                 <div class="form-group">
                     <label> Valor * </label>
 
@@ -65,16 +65,19 @@
                 <div class="form-group">
                     <label> Data * </label>
 
-                    <input type="date" [(ngModel)]="form.data" />
-                </div>
+                    <div class="date-input-row">
+                        <input type="date" [(ngModel)]="form.data" />
 
-                <button type="button" class="option-button confirmado-toggle" [class.active]="form.confirmado" [title]="
-            form.confirmado
-              ? 'Lançamento confirmado'
-              : 'Marcar como pago/confirmado'
-          " (click)="form.confirmado = !form.confirmado">
-                    <span class="material-icons"> thumb_up </span>
-                </button>
+                        <button type="button" class="option-button confirmado-toggle" [class.active]="form.confirmado"
+                            [title]="
+                form.confirmado
+                  ? 'Lançamento confirmado'
+                  : 'Marcar como pago/confirmado'
+              " (click)="form.confirmado = !form.confirmado">
+                            <span class="material-icons"> thumb_up </span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- CONTA / CARTÃO + CATEGORIA -->
@@ -83,49 +86,18 @@
                 <div class="form-group">
                     <label> Conta / Cartão * </label>
 
-                    <select [(ngModel)]="form.origem" [disabled]="!!origemFixa">
-                        <option value="" disabled>Selecione uma conta ou cartão</option>
-
-                        <optgroup label="Contas">
-                            <option *ngFor="let conta of contasSelecionaveis" [value]="'conta:' + conta.id">
-                                {{ conta.nome }}
-                            </option>
-                        </optgroup>
-
-                        <optgroup label="Cartões">
-                            <option *ngFor="let cartao of cartoesSelecionaveis" [value]="'cartao:' + cartao.id">
-                                {{ cartao.nome }}
-                            </option>
-                        </optgroup>
-                    </select>
+                    <app-origem-select [grupos]="gruposOrigem" [origem]="form.origem" [disabled]="!!origemFixa"
+                        (origemChange)="form.origem = $event">
+                    </app-origem-select>
                 </div>
 
                 <div class="form-group">
                     <label> Categoria * </label>
 
-                    <select [(ngModel)]="form.categoria_id">
-                        <option value="" disabled>Selecione uma categoria</option>
-
-                        <ng-container *ngFor="let categoria of categoriasPrincipais">
-                            <option [value]="categoria.id">
-                                {{ categoria.nome }}
-                            </option>
-
-                            <option *ngFor="let subcategoria of subcategoriasDa(categoria.id)"
-                                [value]="subcategoria.id">
-                                &nbsp;&nbsp;&nbsp;↳ {{ subcategoria.nome }}
-                            </option>
-                        </ng-container>
-                    </select>
+                    <app-categoria-select [grupos]="gruposCategorias" [categoriaId]="form.categoria_id"
+                        (categoriaIdChange)="form.categoria_id = $event">
+                    </app-categoria-select>
                 </div>
-            </div>
-
-            <!-- OBSERVAÇÃO -->
-
-            <div class="observation-container" *ngIf="opcoes.observacao">
-                <label> Observação </label>
-
-                <textarea [(ngModel)]="form.observacao" placeholder="Adicione uma observação..."></textarea>
             </div>
 
             <!-- OPÇÕES -->
@@ -188,6 +160,109 @@
 
                     <span> Tags </span>
                 </button>
+            </div>
+
+            <!-- ================================================= -->
+            <!-- OBSERVAÇÃO -->
+            <!-- ================================================= -->
+
+            <div class="observation-container" *ngIf="opcoes.observacao">
+                <label> Observação </label>
+
+                <textarea [(ngModel)]="form.observacao" placeholder="Adicione uma observação..."></textarea>
+            </div>
+
+            <!-- ================================================= -->
+            <!-- TAGS -->
+            <!-- ================================================= -->
+
+            <div class="tags-panel" *ngIf="opcoes.tags">
+                <div class="tags-input" *ngIf="tagsDisponiveis.length; else semTagsCadastradas">
+                    <select [(ngModel)]="novaTagId">
+                        <option value="" disabled>Selecione uma tag</option>
+                        <option *ngFor="let tag of tagsParaSelecionar" [value]="tag.id">
+                            {{ tag.nome }}
+                        </option>
+                    </select>
+
+                    <button type="button" (click)="adicionarTagSelecionada()" title="Adicionar tag"
+                        [disabled]="!novaTagId">
+                        <span class="material-icons"> add </span>
+                    </button>
+                </div>
+
+                <ng-template #semTagsCadastradas>
+                    <p class="tags-empty-hint">
+                        Nenhuma tag cadastrada ainda. Crie tags na tela "Tags" pra poder
+                        usá-las aqui.
+                    </p>
+                </ng-template>
+
+                <div class="tag-list" *ngIf="form.tagIds.length">
+                    <span class="tag" *ngFor="let tagId of form.tagIds; let i = index">
+                        {{ nomeTag(tagId) }}
+
+                        <button type="button" (click)="removerTag(i)" title="Remover tag">
+                            <span class="material-icons"> close </span>
+                        </button>
+                    </span>
+                </div>
+            </div>
+
+            <!-- ================================================= -->
+            <!-- ANEXOS -->
+            <!-- ================================================= -->
+
+            <div class="attachment-panel" *ngIf="opcoes.anexo">
+                <label class="attachment-upload">
+                    <span class="material-icons"> attach_file </span>
+
+                    <span> Adicionar arquivo </span>
+
+                    <input type="file" multiple (change)="adicionarAnexos($event)" />
+                </label>
+
+                <!-- Anexos já salvos no banco (edição de lançamento existente) -->
+                <div class="attachment-list" *ngIf="anexosExistentes.length">
+                    <div class="attachment" *ngFor="let anexo of anexosExistentes">
+                        <span class="material-icons"> description </span>
+
+                        <div>
+                            <strong>
+                                {{ anexo.nome }}
+                            </strong>
+
+                            <span>
+                                {{ tamanhoArquivo(anexo.tamanho) }}
+                            </span>
+                        </div>
+
+                        <button type="button" title="Remover arquivo" (click)="removerAnexoExistente(anexo.id)">
+                            <span class="material-icons"> delete </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Arquivos recém-selecionados, ainda não salvos -->
+                <div class="attachment-list" *ngIf="form.anexos.length">
+                    <div class="attachment" *ngFor="let anexo of form.anexos; let i = index">
+                        <span class="material-icons"> description </span>
+
+                        <div>
+                            <strong>
+                                {{ anexo.nome }}
+                            </strong>
+
+                            <span>
+                                {{ tamanhoArquivo(anexo.tamanho) }}
+                            </span>
+                        </div>
+
+                        <button type="button" title="Remover arquivo" (click)="removerAnexo(i)">
+                            <span class="material-icons"> delete </span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- ================================================= -->
@@ -300,99 +375,6 @@
                             Em caso de divisão não exata, a sobra será somada à primeira
                             parcela.
                         </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ================================================= -->
-            <!-- TAGS -->
-            <!-- ================================================= -->
-
-            <div class="tags-panel" *ngIf="opcoes.tags">
-                <div class="tags-input" *ngIf="tagsDisponiveis.length; else semTagsCadastradas">
-                    <select [(ngModel)]="novaTagId">
-                        <option value="" disabled>Selecione uma tag</option>
-                        <option *ngFor="let tag of tagsParaSelecionar" [value]="tag.id">
-                            {{ tag.nome }}
-                        </option>
-                    </select>
-
-                    <button type="button" (click)="adicionarTagSelecionada()" title="Adicionar tag"
-                        [disabled]="!novaTagId">
-                        <span class="material-icons"> add </span>
-                    </button>
-                </div>
-
-                <ng-template #semTagsCadastradas>
-                    <p class="tags-empty-hint">
-                        Nenhuma tag cadastrada ainda. Crie tags na tela "Tags" pra poder
-                        usá-las aqui.
-                    </p>
-                </ng-template>
-
-                <div class="tag-list" *ngIf="form.tagIds.length">
-                    <span class="tag" *ngFor="let tagId of form.tagIds; let i = index">
-                        {{ nomeTag(tagId) }}
-
-                        <button type="button" (click)="removerTag(i)" title="Remover tag">
-                            <span class="material-icons"> close </span>
-                        </button>
-                    </span>
-                </div>
-            </div>
-
-            <!-- ================================================= -->
-            <!-- ANEXOS -->
-            <!-- ================================================= -->
-
-            <div class="attachment-panel" *ngIf="opcoes.anexo">
-                <label class="attachment-upload">
-                    <span class="material-icons"> attach_file </span>
-
-                    <span> Adicionar arquivo </span>
-
-                    <input type="file" multiple (change)="adicionarAnexos($event)" />
-                </label>
-
-                <!-- Anexos já salvos no banco (edição de lançamento existente) -->
-                <div class="attachment-list" *ngIf="anexosExistentes.length">
-                    <div class="attachment" *ngFor="let anexo of anexosExistentes">
-                        <span class="material-icons"> description </span>
-
-                        <div>
-                            <strong>
-                                {{ anexo.nome }}
-                            </strong>
-
-                            <span>
-                                {{ tamanhoArquivo(anexo.tamanho) }}
-                            </span>
-                        </div>
-
-                        <button type="button" title="Remover arquivo" (click)="removerAnexoExistente(anexo.id)">
-                            <span class="material-icons"> delete </span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Arquivos recém-selecionados, ainda não salvos -->
-                <div class="attachment-list" *ngIf="form.anexos.length">
-                    <div class="attachment" *ngFor="let anexo of form.anexos; let i = index">
-                        <span class="material-icons"> description </span>
-
-                        <div>
-                            <strong>
-                                {{ anexo.nome }}
-                            </strong>
-
-                            <span>
-                                {{ tamanhoArquivo(anexo.tamanho) }}
-                            </span>
-                        </div>
-
-                        <button type="button" title="Remover arquivo" (click)="removerAnexo(i)">
-                            <span class="material-icons"> delete </span>
-                        </button>
                     </div>
                 </div>
             </div>

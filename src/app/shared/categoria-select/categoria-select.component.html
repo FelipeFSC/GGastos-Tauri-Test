@@ -1,0 +1,46 @@
+<div class="categoria-select">
+    <button #trigger type="button" class="categoria-select-trigger" [class.aberto]="aberto" (click)="alternar()">
+        <ng-container *ngIf="categoriaSelecionada as categoria; else placeholderTpl">
+            <span class="categoria-select-icon" *ngIf="!ehSubcategoriaSelecionada"
+                [style.background]="categoria.cor || '#4285f4'">
+                <span class="material-icons">{{ categoria.icone || "category" }}</span>
+            </span>
+
+            <span class="categoria-select-dot" *ngIf="ehSubcategoriaSelecionada"
+                [style.background]="categoria.cor || '#4285f4'"></span>
+
+            <span class="categoria-select-nome">{{ categoria.nome }}</span>
+        </ng-container>
+
+        <ng-template #placeholderTpl>
+            <span class="categoria-select-placeholder">{{ placeholder }}</span>
+        </ng-template>
+
+        <span class="material-icons categoria-select-arrow">expand_more</span>
+    </button>
+
+    <div #painel class="categoria-select-painel" *ngIf="aberto" [style.top.px]="top" [style.left.px]="left"
+        [style.width.px]="width">
+        <div class="categoria-select-vazio" *ngIf="!grupos.length">
+            Nenhuma categoria cadastrada.
+        </div>
+
+        <ng-container *ngFor="let grupo of grupos">
+            <button type="button" class="categoria-select-item" [class.selecionado]="grupo.principal.id === categoriaId"
+                (click)="selecionar(grupo.principal.id)">
+                <span class="categoria-select-icon" [style.background]="grupo.principal.cor || '#4285f4'">
+                    <span class="material-icons">{{ grupo.principal.icone || "category" }}</span>
+                </span>
+
+                {{ grupo.principal.nome }}
+            </button>
+
+            <button type="button" class="categoria-select-item sub" *ngFor="let sub of grupo.subcategorias"
+                [class.selecionado]="sub.id === categoriaId" (click)="selecionar(sub.id)">
+                <span class="categoria-select-dot" [style.background]="sub.cor || grupo.principal.cor || '#4285f4'"></span>
+
+                {{ sub.nome }}
+            </button>
+        </ng-container>
+    </div>
+</div>

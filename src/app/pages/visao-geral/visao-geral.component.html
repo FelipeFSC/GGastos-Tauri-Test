@@ -132,6 +132,35 @@
         </ng-container>
       </div>
 
+      <!-- CONTAS A RECEBER -->
+      <div class="card">
+        <div class="card-title-row">
+          <h3 class="section-title no-border">Contas a receber</h3>
+
+          <button type="button" class="btn-collapse" (click)="toggleCard('contasAReceber')"
+            [title]="cardFechado('contasAReceber') ? 'Expandir' : 'Recolher'">
+            <span class="material-icons">{{ cardFechado('contasAReceber') ? 'expand_more' : 'expand_less' }}</span>
+          </button>
+        </div>
+
+        <ng-container *ngIf="!cardFechado('contasAReceber')">
+          <a *ngFor="let l of contasAReceber" class="list-item">
+            <div class="item-icon" [style.background]="l.cor || '#9aa0a6'">
+              <span class="material-icons">{{ l.icone || 'attach_money' }}</span>
+            </div>
+
+            <div class="item-info">
+              <strong>{{ l.descricao || 'Sem descrição' }}</strong>
+              <span>{{ l.data.split('-').reverse().join('/') }}</span>
+            </div>
+
+            <strong class="item-value positivo">R$ {{ l.valor | number:'1.2-2' }}</strong>
+          </a>
+
+          <p class="empty-hint" *ngIf="contasAReceber.length === 0">Nenhuma conta a receber em aberto.</p>
+        </ng-container>
+      </div>
+
     </div>
 
 

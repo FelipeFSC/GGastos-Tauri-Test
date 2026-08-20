@@ -1,0 +1,145 @@
+.categoria-select {
+    position: relative;
+}
+
+.categoria-select-trigger {
+    width: 100%;
+    height: 42px;
+
+    box-sizing: border-box;
+
+    padding: 0 10px;
+
+    border: 1px solid #dfe3e8;
+    border-radius: 8px;
+
+    background: white;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    color: #202124;
+
+    text-align: left;
+}
+
+.categoria-select-trigger.aberto {
+    border-color: #4285f4;
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+}
+
+.categoria-select-placeholder {
+    color: #9ca3af;
+}
+
+.categoria-select-nome {
+    flex: 1;
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.categoria-select-arrow {
+    margin-left: auto;
+
+    color: #9ca3af;
+    font-size: 20px;
+}
+
+.categoria-select-icon {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+
+    border-radius: 7px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: white;
+}
+
+.categoria-select-icon .material-icons {
+    font-size: 16px;
+}
+
+.categoria-select-dot {
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+
+    border-radius: 50%;
+}
+
+.categoria-select-painel {
+    position: fixed;
+
+    max-height: 320px;
+    overflow-y: auto;
+
+    background: white;
+
+    border: 1px solid #e7e9ee;
+    border-radius: 10px;
+
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+
+    padding: 6px;
+
+    z-index: 1100;
+}
+
+.categoria-select-item {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 8px 10px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    color: #202124;
+
+    text-align: left;
+}
+
+.categoria-select-item:hover {
+    background: #f3f6fb;
+}
+
+.categoria-select-item.selecionado {
+    background: #eef4ff;
+    color: #4285f4;
+    font-weight: 600;
+}
+
+.categoria-select-item.sub {
+    padding-left: 18px;
+
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.categoria-select-vazio {
+    padding: 16px;
+
+    text-align: center;
+
+    color: #9ca3af;
+    font-size: 13px;
+}

@@ -2,6 +2,14 @@ import { Component, EventEmitter, Input, OnInit, Output } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { DatabaseService, USUARIO_LOCAL_ID, EscopoEdicao } from "../../services/database.service";
+import {
+    CategoriaSelectComponent,
+    GrupoCategoria,
+} from "../categoria-select/categoria-select.component";
+import {
+    GrupoOrigem,
+    OrigemSelectComponent,
+} from "../origem-select/origem-select.component";
 
 interface Conta {
     id: string;
@@ -22,6 +30,7 @@ interface Cartao {
 interface Categoria {
     id: string;
     nome: string;
+    tipo: string;
     icone?: string | null;
     cor?: string | null;
     categoria_pai_id?: string | null;
@@ -97,7 +106,7 @@ interface FormLancamento {
 @Component({
     selector: "app-lancamento-modal",
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, CategoriaSelectComponent, OrigemSelectComponent],
     templateUrl: "./lancamento-modal.component.html",
     styleUrl: "./lancamento-modal.component.css",
 })
@@ -419,6 +428,7 @@ export class LancamentoModalComponent implements OnInit {
         return categoria.ativo !== 0 || categoria.id === this.form.categoria_id;
     }
 
+    /** Só do tipo do lançamento atual (despesa não mistura com categoria de receita e vice-versa). */
     get categoriasPrincipais(): Categoria[] {
         const categoriaSelecionada = this.categorias.find(
             (categoria) => categoria.id === this.form.categoria_id,
@@ -429,6 +439,7 @@ export class LancamentoModalComponent implements OnInit {
         return this.categorias.filter(
             (categoria) =>
                 !categoria.categoria_pai_id &&
+                categoria.tipo === this.tipoModal &&
                 (this.categoriaSelecionavel(categoria) || categoria.id === paiDaSelecionada),
         );
     }
@@ -439,6 +450,14 @@ export class LancamentoModalComponent implements OnInit {
                 categoria.categoria_pai_id === categoriaId &&
                 this.categoriaSelecionavel(categoria),
         );
+    }
+
+    /** Categorias principais + subcategorias já agrupadas, prontas pro <app-categoria-select>. */
+    get gruposCategorias(): GrupoCategoria[] {
+        return this.categoriasPrincipais.map((principal) => ({
+            principal,
+            subcategorias: this.subcategoriasDa(principal.id),
+        }));
     }
 
     // =====================================================================
@@ -457,6 +476,24 @@ export class LancamentoModalComponent implements OnInit {
         return this.cartoes.filter(
             (cartao) => cartao.ativo !== 0 || this.form.origem === `cartao:${cartao.id}`,
         );
+    }
+
+    /** Contas + cartões já agrupados, prontos pro <app-origem-select>. */
+    get gruposOrigem(): GrupoOrigem[] {
+        return [
+            {
+                rotulo: "Contas",
+                prefixo: "conta",
+                iconePadrao: "account_balance_wallet",
+                itens: this.contasSelecionaveis,
+            },
+            {
+                rotulo: "Cartões",
+                prefixo: "cartao",
+                iconePadrao: "credit_card",
+                itens: this.cartoesSelecionaveis,
+            },
+        ];
     }
 
     private processarOrigem(): {

@@ -341,13 +341,28 @@ export class LancamentosComponent implements OnInit {
             );
     }
 
-    /** Soma de tudo (confirmado ou não) — resultado projetado do mês. */
+    /**
+     * Soma de tudo (confirmado ou não) — resultado projetado do mês.
+     *
+     * Além dos lançamentos de conta, entra também o que ainda falta pagar
+     * das faturas de cartão que vencem no mês (`valorRestante`, não
+     * `valorTotal` — a parte já paga vira um lançamento de despesa na
+     * conta que pagou, e esse lançamento já está em `this.lancamentos`;
+     * somar o total de novo contaria a mesma coisa duas vezes).
+     */
     previstoMes(): number {
-        return this.lancamentos.reduce(
+        const totalLancamentos = this.lancamentos.reduce(
             (soma, lancamento) =>
                 soma + (lancamento.tipo === "receita" ? lancamento.valor : -lancamento.valor),
             0,
         );
+
+        const totalFaturas = this.faturasDoMes.reduce(
+            (soma, fatura) => soma - fatura.valorRestante,
+            0,
+        );
+
+        return totalLancamentos + totalFaturas;
     }
 
     valorComSinal(valor: number): string {

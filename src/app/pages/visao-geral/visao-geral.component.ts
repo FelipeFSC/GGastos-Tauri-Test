@@ -99,6 +99,7 @@ export class VisaoGeralComponent implements OnInit, OnDestroy {
   contas: ContaResumo[] = [];
   cartoes: CartaoResumo[] = [];
   contasAPagar: ContaAPagar[] = [];
+  contasAReceber: ContaAPagar[] = [];
   topCategorias: GastoCategoria[] = [];
   limitesResumo: LimiteResumo[] = [];
 
@@ -176,6 +177,7 @@ export class VisaoGeralComponent implements OnInit, OnDestroy {
       this.carregarContas(),
       this.carregarCartoes(),
       this.carregarContasAPagar(inicio, fim),
+      this.carregarContasAReceber(inicio, fim),
       this.carregarTopCategorias(inicio, fim),
       this.carregarLimitesResumo(),
     ]);
@@ -270,6 +272,18 @@ export class VisaoGeralComponent implements OnInit, OnDestroy {
       cor: fatura.cartao_cor,
       faturaId: fatura.id,
     };
+  }
+
+  private async carregarContasAReceber(inicio: string, fim: string): Promise<void> {
+    this.contasAReceber = await this.db.query<ContaAPagar>(
+      `SELECT l.id, l.descricao, l.valor, l.data, c.icone, c.cor
+       FROM lancamentos l
+       LEFT JOIN categorias c ON c.id = l.categoria_id
+       WHERE l.usuario_id = ? AND l.tipo = 'receita' AND l.confirmado = 0
+         AND l.cartao_id IS NULL AND l.data BETWEEN ? AND ?
+       ORDER BY l.data ASC`,
+      [USUARIO_LOCAL_ID, inicio, fim]
+    );
   }
 
   private formatarData(data: Date): string {

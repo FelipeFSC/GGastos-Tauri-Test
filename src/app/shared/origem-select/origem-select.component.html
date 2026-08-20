@@ -1,0 +1,38 @@
+<div class="origem-select">
+    <button #trigger type="button" class="origem-select-trigger" [class.aberto]="aberto" [disabled]="disabled"
+        (click)="alternar()">
+        <ng-container *ngIf="itemSelecionado as selecionado; else placeholderTpl">
+            <span class="origem-select-icon" [style.background]="selecionado.item.cor || '#4285f4'">
+                <span class="material-icons">{{ selecionado.item.icone || selecionado.grupo.iconePadrao }}</span>
+            </span>
+
+            <span class="origem-select-nome">{{ selecionado.item.nome }}</span>
+        </ng-container>
+
+        <ng-template #placeholderTpl>
+            <span class="origem-select-placeholder">{{ placeholder }}</span>
+        </ng-template>
+
+        <span class="material-icons origem-select-arrow">expand_more</span>
+    </button>
+
+    <div #painel class="origem-select-painel" *ngIf="aberto" [style.top.px]="top" [style.left.px]="left"
+        [style.width.px]="width">
+        <div class="origem-select-vazio" *ngIf="!temItens">
+            Nenhuma conta ou cartão cadastrado.
+        </div>
+
+        <ng-container *ngFor="let grupo of grupos">
+            <div class="origem-select-rotulo" *ngIf="grupo.itens.length">{{ grupo.rotulo }}</div>
+
+            <button type="button" class="origem-select-item" *ngFor="let item of grupo.itens"
+                [class.selecionado]="origem === (grupo.prefixo + ':' + item.id)" (click)="selecionar(grupo, item)">
+                <span class="origem-select-icon" [style.background]="item.cor || '#4285f4'">
+                    <span class="material-icons">{{ item.icone || grupo.iconePadrao }}</span>
+                </span>
+
+                {{ item.nome }}
+            </button>
+        </ng-container>
+    </div>
+</div>
